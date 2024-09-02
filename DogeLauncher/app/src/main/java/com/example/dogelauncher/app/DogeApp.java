@@ -2,7 +2,10 @@ package com.example.dogelauncher.app;
 
 import android.app.Application;
 
-public class DogeApp extends Application {
+import org.litepal.LitePal;
+import org.litepal.LitePalApplication;
+
+public class DogeApp extends LitePalApplication {
     private static Application INSTANCE = null;
 
     @Override

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SpreadView">
+        <!--最大扩大倍数  -->
+        <attr name="spread_radius" format="integer"/>
+        <!--最小缩小倍数  -->
+        <attr name="spread_max_radius" format="integer"/>
+        <attr name="spread_center_color" format="color"/>
+        <attr name="spread_spread_color" format="color"/>
+        <attr name="spread_distance" format="integer"/>
+        <attr name="spread_ripple_circle_num" format="integer"/>
+        <!--扩散延迟间隔-->
+        <attr name="spread_delay_milliseconds" format="integer" />
+  </declare-styleable>
+
+</resources>

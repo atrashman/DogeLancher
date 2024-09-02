@@ -2,9 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.dogelauncher">
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
-        tools:ignore="QueryAllPackagesPermission" />
 
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <application
         android:name=".app.DogeApp"
@@ -16,17 +17,19 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="false"
         android:theme="@style/HomeTheme"
+        android:hardwareAccelerated="false"
         android:windowLayoutInDisplayCutoutMode="shortEdges"
         tools:targetApi="31">
-<!--        android:theme="@style/Theme.DogeLauncher"-->
+        <activity
+            android:name=".test.TestActivity"
+            android:exported="false" />
+        <!-- android:theme="@style/Theme.DogeLauncher" -->
         <activity
             android:name=".aty.MainActivity"
+            android:exported="true"></activity>
+        <activity
+            android:name=".aty.SplashAty"
             android:exported="true">
-
-        </activity>
-        <activity android:name=".aty.SplashAty"
-            android:exported="true"
-            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".test.TestActivity">
+
+
+    <com.example.dogelauncher.view.RippleView
+        android:id="@+id/spreadView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:spread_delay_milliseconds="35"
+        app:spread_distance="5"
+        app:spread_max_radius="500"
+        app:spread_radius="100"
+        app:spread_spread_color="@color/purple_700" />
+
+</LinearLayout>
