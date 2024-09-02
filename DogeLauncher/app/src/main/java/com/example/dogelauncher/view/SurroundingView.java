@@ -5,7 +5,11 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,6 +23,7 @@ import java.util.List;
 
 public class SurroundingView extends ViewGroup {
 
+    private static final String TAG = "SurroundingView";
     private int surroundingSize = 8;
     private List<AppData> mData;
 
@@ -42,6 +47,16 @@ public class SurroundingView extends ViewGroup {
         spreadPaint.setAntiAlias(true);
         spreadPaint.setAlpha(255);
         spreadPaint.setColor(R.color.purple_200);
+
+        /*
+         * ViewGroup在没有背景时不会走onDraw方法，但可以走dispatchDraw
+         * 原因在于View对onDraw的控制时做了限定：[if (!dirtyOpaque) onDraw(canvas)]
+         * 你可以使用onDraw，在之前设个透明色即可:setBackgroundColor(0x00000000);
+         * */
+        setBackgroundColor(0x00000000);
+
+        //不然不触发onDraw
+        setWillNotDraw(false);
     }
 
     public SurroundingView(Context context) {
@@ -49,7 +64,8 @@ public class SurroundingView extends ViewGroup {
     }
 
     public SurroundingView(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, 0);
+        super(context, attrs);
+        init();
     }
 
     public SurroundingView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
@@ -58,16 +74,49 @@ public class SurroundingView extends ViewGroup {
     }
 
     @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        measureChildren(widthMeasureSpec, heightMeasureSpec);
+    }
 
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        if (mIconViews == null || mIconViews.size() ==0)
+            return;
+        int childCount = getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View childView = getChildAt(i);
+            int childW = childView.getMeasuredWidth();
+            int childH = childView.getMeasuredHeight();
+            Log.e(TAG, "onLayout: childW "+childW + " childH "+ childH );
+            int topPos = (int) (childH * i*0.5f);
+            int leftPos = 0;
+            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
+        }
     }
 
 
     public void showSurroundingApps(float x, float y, AppListViewModel appListViewModel) {
         List<AppData> data = appListViewModel.getData();
         mData = data.subList(0, Math.min(data.size(), surroundingSize));
+        generateViews(mData);
+
         showRipple(x, y);
+        requestLayout();
         invalidate();
+
+    }
+    List<View> mIconViews = new ArrayList<>();
+
+    private void generateViews(List<AppData> mData) {
+        for (AppData appData : mData) {
+            LayoutInflater inflater = LayoutInflater.from(getContext());
+            View view = inflater.inflate(R.layout.icon_view, this, false);
+            ImageView iv = view.findViewById(R.id.icon);
+            iv.setImageDrawable(appData.getIcon());
+            mIconViews.add(view);
+            addView(view);
+        }
     }
 
     private void showRipple (float x, float y) {
@@ -81,26 +130,30 @@ public class SurroundingView extends ViewGroup {
             spreadRadius.add(0);
             alphas.add(255);
         }
-        repeatCount = 1;
+        repeatCount = rippleCircleNum;
     }
     private void showSurrounding (float x, float y) {
 
     }
 
 
+    //先resume 再 onMeasure  onSizeChanged onLayout onDraw
+    //这里不走onDraw是为什么
     @Override
     protected void onDraw(@NonNull Canvas canvas) {
         super.onDraw(canvas);
         if (ripple) {
-            for (int i = 0; i < spreadRadius.size(); i++) {
+            int spinCount = repeatCount;
+            for (int i = 0; i < spinCount; i++) {
                 if (i == 0) {
-                    if ((spreadRadius.get(0) + distance) > maxRadius) {
+                    if ((spreadRadius.get(i) + distance) > maxRadius) {
                         repeatCount --;
                         if (repeatCount <= 0) {
+                            ripple = false;
                             return;
                         }
                     }
-                    spreadRadius.set(0, (spreadRadius.get(0) + distance) % maxRadius);
+                    spreadRadius.set(i, (spreadRadius.get(i) + distance) % maxRadius);
                 } else {
                     // 确保后续波纹在前一个波纹到达一半半径时开始扩散
                     if (spreadRadius.get(i - 1) > maxRadius / 2 && spreadRadius.get(i) == 0) {
@@ -121,7 +174,7 @@ public class SurroundingView extends ViewGroup {
             }
         }
 
-        if ()
 
     }
+
 }

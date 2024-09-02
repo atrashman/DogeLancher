@@ -12,13 +12,19 @@ import com.example.dogelauncher.utils.AppDataUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class AppListViewModel extends ViewModel {
 
     private static final String TAG = "AppListViewModel";
 
-    private final Executor mExecutor = Executors.newSingleThreadExecutor();
+    public static final Executor mExecutor = new ThreadPoolExecutor(4,
+            12,
+            500,
+            TimeUnit.MILLISECONDS,
+            new LinkedBlockingDeque<>());
 
     private final MutableLiveData<List<AppData>> mPkgList = new MutableLiveData<>(AppDataUtil.getInstalledApps());
 

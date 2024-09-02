@@ -24,6 +24,8 @@ public class AppDataUtil {
     private static String TAG = "DataUtil";
     private static List<AppData> allData = null;
 
+
+
     public static List<AppData> getInstalledApps() {
         if (allData != null) return allData;
         List<AppData> dbData = getAppDataFromDB();

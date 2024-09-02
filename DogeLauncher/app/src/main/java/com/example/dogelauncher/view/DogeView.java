@@ -2,6 +2,7 @@ package com.example.dogelauncher.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -16,10 +17,12 @@ import com.example.dogelauncher.viewModel.AppListViewModel;
 public class DogeView extends ViewGroup {
     private static final String TAG = "DogeView";
 
-    private static int displayMode;
+
     private static final int DISPLAY_MODE_SURROUNDING = 0;
     private static final int DISPLAY_MODE_LIST = 1;
     private static final int DISPLAY_MODE_EDIT = 2;
+    private static int displayMode = DISPLAY_MODE_SURROUNDING;
+
 
 //    private int touchMode;
 //    private static final int TOUCH_MODE_EMPTY = 0;
@@ -28,7 +31,7 @@ public class DogeView extends ViewGroup {
 
     private int status;
     private static final int STATUS_FREE = 0;
-    private static final int STATUS_UNAVAILABLE = 0;
+    private static final int STATUS_UNAVAILABLE = 1;
 
     //view
     private SurroundingView surroundingView;
@@ -84,37 +87,69 @@ public class DogeView extends ViewGroup {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             if (status == STATUS_UNAVAILABLE) return true;
-            switch (displayMode) {
-                case DISPLAY_MODE_SURROUNDING:
-                    surroundingView.showSurroundingApps(event.getX(), event.getY(), viewModel);
+            int action = event.getAction();
+            switch (action) {
+                case MotionEvent.ACTION_DOWN:
+                    switch (displayMode) {
+                        case DISPLAY_MODE_SURROUNDING:
+                            surroundingView.showSurroundingApps(event.getX(), event.getY(), viewModel);
+                            break;
+                    }
                     break;
             }
+            return true;
         }
     }
 
     public DogeView(Context context, AttributeSet attrs) {
-        this(context, attrs,0);
+        super(context, attrs);
+        initView();
     }
 
-    public DogeView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-
-
-
-    }
+//    public DogeView(Context context, AttributeSet attrs, int defStyleAttr) {
+//        super(context, attrs, defStyleAttr);
+//        initView();
+//    }
 
     public void initView () {
         FlingListener flingListener = new FlingListener();
         gestureDetector = new GestureDetector(getContext(), flingListener);
-        surroundingView = (SurroundingView) LayoutInflater.from(getContext()).inflate(R.layout.DogeView, this, false);
+        DogeView dogeView = (DogeView)LayoutInflater.from(getContext()).inflate(R.layout.doge_view, this, true);
+        surroundingView = (SurroundingView) findViewById(R.id.surrounding_view);//
 
+        setOnTouchListener(new DogeViewTouchListener());
+
+        /*
+         * ViewGroup在没有背景时不会走onDraw方法，但可以走dispatchDraw
+         * 原因在于View对onDraw的控制时做了限定：[if (!dirtyOpaque) onDraw(canvas)]
+         * 你可以使用onDraw，在之前设个透明色即可:setBackgroundColor(0x00000000);
+         * */
+        setBackgroundColor(0x00000000);
     }
 
-
-
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        measureChildren(widthMeasureSpec, heightMeasureSpec);
+    }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-
+//        [1].必须onMeasure中测量孩子的尺寸，否则无法显示
+//        [2].必须onLayout中布局孩子的位置，否则无法显示
+//        [3].在onLayout中孩子不能用view.getHeight()获取尺寸(因为为0)，只能用view.getMeasuredHeight
+        int childCount = getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View childView = getChildAt(i);
+            int childW = childView.getMeasuredWidth();
+            int childH = childView.getMeasuredHeight();
+            Log.e(TAG, "onLayout: childW "+childW + " childH "+ childH );
+            int topPos = (int) (childH * i*0.5f);
+            int leftPos = 0;
+            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
+        }
     }
+
+
+
 }

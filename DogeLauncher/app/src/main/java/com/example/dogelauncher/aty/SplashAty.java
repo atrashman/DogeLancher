@@ -50,10 +50,12 @@ public class SplashAty extends AppCompatActivity {
             @Override
             public void onAnimationEnd(Animation animation) {
                 Intent intent = new Intent();
-                ComponentName componentName = new ComponentName(getApplication().getPackageName(), getApplication().getPackageName() + ".test.TestActivity");//.test.TestActivity   //.aty.MainActivity
+                ComponentName componentName = new ComponentName(getApplication().getPackageName(),
+                        getApplication().getPackageName() + ".test.TestActivity");//.test.TestActivity   //.aty.MainActivity
                 intent.setComponent(componentName);
                 startActivity(intent);
                 overridePendingTransition(R.anim.right_2_left, R.anim.left_2_right);
+                finish();
             }
 
             @Override
@@ -62,6 +64,46 @@ public class SplashAty extends AppCompatActivity {
             }
         });
     }
+
+//    //加载和注册广播 \ 读取数据
+//    private void loadData () {
+//        final ViewModelProvider provider = new ViewModelProvider(this);
+//        mAppListViewModel = provider.get(AppListViewModel.class);
+//        mAppDataAdapter = new AppDataAdapter2(mAppListViewModel);
+//
+//        //register
+//        mIntentFilter = new IntentFilter(Intent.ACTION_PACKAGE_ADDED);
+//        mIntentFilter.addAction(Intent.ACTION_PACKAGE_REMOVED);
+////        mIntentFilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
+////        mIntentFilter.addAction(Intent.ACTION_PACKAGE_REPLACED);
+//        //来确保只接收应用的安装与卸载事件
+//        mIntentFilter.addDataScheme("package");
+//        mBroadcastReceiver = new BroadcastReceiver() {
+//            @Override
+//            public void onReceive(Context context, Intent intent) {
+//                Log.d(TAG, "onReceive: refresh application list");
+//                String action = intent.getAction();
+//                if (Intent.ACTION_PACKAGE_ADDED.equals(action)) {
+//                    String packageName = intent.getStringExtra(Intent.EXTRA_PACKAGE_NAME);
+//                    Log.d("PackageChangeReceiver", "Package added: " + packageName);
+//                    if(!TextUtils.isEmpty(packageName)) {
+////                        AppDataUtil.addData();
+//                    }
+//                } else if (Intent.ACTION_PACKAGE_REMOVED.equals(action)) {
+//                    String packageName = intent.getStringExtra(Intent.EXTRA_PACKAGE_NAME);
+//                    // 在某些情况下，packageName可能是null
+//                    boolean replacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false);
+//                    // 处理应用卸载事件
+//                    Log.d("PackageChangeReceiver", "Package removed: " + (packageName != null ? packageName : "unknown") + ", replacing: " + replacing);
+//                    if(!TextUtils.isEmpty(packageName)) {
+////                        AppDataUtil.removeData();
+//                    }
+//                }
+//                mAppListViewModel.loadPackageList();
+//            }
+//        };
+//    }
+
 
 
     /**

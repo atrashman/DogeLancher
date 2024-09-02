@@ -9,8 +9,12 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.dogelauncher.R;
+import com.example.dogelauncher.view.DogeView;
+import com.example.dogelauncher.viewModel.AppListViewModel;
 
 public class TestActivity extends AppCompatActivity {
+
+    private DogeView dogeView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,5 +26,11 @@ public class TestActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        dogeView = (DogeView)findViewById(R.id.doge);
+        AppListViewModel appListViewModel = new AppListViewModel();
+        appListViewModel.loadPackageList();
+        dogeView.setViewModel(appListViewModel);
+
     }
 }
