@@ -34,13 +34,21 @@ public class SurroundingView extends ViewGroup {
     private float centerX;//圆心x
     private float centerY;//圆心y
     private int distance = 5; //每次圆递增间距
-    private int maxRadius = 300; //最大圆半径
+    public static int maxRadius = 300; //最大圆半径
     private int delayMilliseconds = 22;//扩散延迟间隔，越大扩散越慢
     private int repeatCount = 1;
     private int rippleCircleNum = 5;
 
     private List<Integer> spreadRadius = new ArrayList<>(rippleCircleNum);//扩散圆层级数，元素为扩散的距离
     private List<Integer>  alphas = new ArrayList<>(rippleCircleNum);//对应每层圆的透明度
+
+
+    //iconView
+    public static final int ICON_MAX_SIZE = 288;//px
+    public static final int ICON_MIN_SIZE = 144;//可以用最小size来限制app个数
+    public static final int ICON_MIN_MARGIN = 33;
+
+
 
     private void init () {
         spreadPaint = new Paint();
@@ -76,7 +84,17 @@ public class SurroundingView extends ViewGroup {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        measureChildren(widthMeasureSpec, heightMeasureSpec);
+//        measureChildren(widthMeasureSpec, heightMeasureSpec);
+        /*
+        * 这里因为view都是直接添加进来的，外面的人没办法设置子view的属性
+        * 所以这里我们就基于圆环拿到基本测量即可
+        * 我们的测量思路如下：
+        * 我们在一个基于centerX centerY的圆上测量子view
+        * 1 圆大小我们固定起来
+        * 2 保证APP Icon均匀分布
+        * 3 icon绘制大小跟app数量有关
+        * */
+
     }
 
     @Override
