@@ -18,6 +18,7 @@ public class CalculateUtil {
         if (expectNum == 0) {
             Log.e(TAG, "calculateAppSize: no app should be measure and layout" );
         }
+        int realSize ;
         if (expectNum == 1) {
             return SurroundingView.ICON_MAX_SIZE;
         }
@@ -28,13 +29,15 @@ public class CalculateUtil {
         // 2 * R * sin(θ/2) 计算弦长
         double angleInRadians = Math.toRadians(angle);// 将角度从度转换为弧度
         double chordLength = 2 * radius * Math.sin(angleInRadians / 2); //也就是直线距离
-        chordLength += SurroundingView.ICON_MIN_MARGIN; //加上这个间隔
+        //chordLength += SurroundingView.ICON_MIN_MARGIN; //加上这个间隔
         //icon 对角线长 应该小于 chordLength
+
         if (1.414 *  SurroundingView.ICON_MAX_SIZE <= chordLength) {
-            return SurroundingView.ICON_MAX_SIZE;
+            realSize =  SurroundingView.ICON_MAX_SIZE;
         } else {
-            return (int)chordLength/2;
+            realSize = (int) (chordLength/1.414f);
         }
+        return Math.max (realSize, SurroundingView.ICON_MIN_SIZE);
     }
 
 }

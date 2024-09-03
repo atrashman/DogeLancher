@@ -1,5 +1,7 @@
 package com.example.dogelauncher.view;
 
+import static android.view.View.MeasureSpec.EXACTLY;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -16,6 +18,7 @@ import androidx.annotation.Nullable;
 
 import com.example.dogelauncher.R;
 import com.example.dogelauncher.model.AppData;
+import com.example.dogelauncher.utils.CalculateUtil;
 import com.example.dogelauncher.viewModel.AppListViewModel;
 
 import java.util.ArrayList;
@@ -46,8 +49,11 @@ public class SurroundingView extends ViewGroup {
     //iconView
     public static final int ICON_MAX_SIZE = 288;//px
     public static final int ICON_MIN_SIZE = 144;//可以用最小size来限制app个数
-    public static final int ICON_MIN_MARGIN = 33;
+    public static final int ICON_MIN_MARGIN = 15;
 
+
+    //touch
+    private boolean isTouching;
 
 
     private void init () {
@@ -65,6 +71,9 @@ public class SurroundingView extends ViewGroup {
 
         //不然不触发onDraw
         setWillNotDraw(false);
+
+
+
     }
 
     public SurroundingView(Context context) {
@@ -95,21 +104,48 @@ public class SurroundingView extends ViewGroup {
         * 3 icon绘制大小跟app数量有关
         * */
 
+        int childCount = getChildCount();
+        if (childCount == 0) {
+            return;
+        }
+
+        int selfWidth = MeasureSpec.getSize(widthMeasureSpec);
+
+        int selfHeight = MeasureSpec.getSize(heightMeasureSpec);
+
+        int size = Math.min(selfWidth,selfHeight);
+        //这里只是为了保险， 实际上基本上取不到selfWidth selfHeight任意一个 除非整个vg真的很小
+        size =  Math.min(CalculateUtil.calculateAppSize(childCount, maxRadius), size);
+
+        for (int i =0 ;i < childCount;i++){
+            View child = getChildAt(i);
+            child.measure(MeasureSpec.makeMeasureSpec(size, EXACTLY), MeasureSpec.makeMeasureSpec(size, EXACTLY));
+        }
+
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         if (mIconViews == null || mIconViews.size() ==0)
             return;
+
         int childCount = getChildCount();
         for (int i = 0; i < childCount; i++) {
             View childView = getChildAt(i);
             int childW = childView.getMeasuredWidth();
             int childH = childView.getMeasuredHeight();
-            Log.e(TAG, "onLayout: childW "+childW + " childH "+ childH );
-            int topPos = (int) (childH * i*0.5f);
-            int leftPos = 0;
-            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
+//            Log.e(TAG, "onLayout: childW "+childW + " childH "+ childH );
+//            int topPos = (int) (childH * i*0.5f);
+//            int leftPos = 0;
+//            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
+//            float posX = (float) (centerX + maxRadius  * Math.cos(i * 360.f / childCount));
+//            float posY = (float) (centerY + maxRadius  *  Math.sin(i * 360.f / childCount));//- maxRadius
+//            int leftPos = (int) (posX - centerX);
+//            int topPos = (int) (posY - centerY);
+//            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
+            int posX = (int)(centerX + maxRadius  * Math.cos(i * 360.f / childCount));
+            int posY = (int) (centerY + maxRadius  *  Math.sin(i * 360.f / childCount));
+            childView.layout(posX - childW/2 , posY - childH/2, posX + childW/2, posY + childH/2);
         }
     }
 

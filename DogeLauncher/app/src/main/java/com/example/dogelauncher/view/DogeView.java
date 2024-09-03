@@ -115,7 +115,7 @@ public class DogeView extends ViewGroup {
         FlingListener flingListener = new FlingListener();
         gestureDetector = new GestureDetector(getContext(), flingListener);
         DogeView dogeView = (DogeView)LayoutInflater.from(getContext()).inflate(R.layout.doge_view, this, true);
-        surroundingView = (SurroundingView) findViewById(R.id.surrounding_view);//
+        surroundingView = (SurroundingView) dogeView.findViewById(R.id.surrounding_view);//
 
         setOnTouchListener(new DogeViewTouchListener());
 
