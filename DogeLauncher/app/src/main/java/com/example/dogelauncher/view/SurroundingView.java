@@ -27,7 +27,7 @@ import java.util.List;
 public class SurroundingView extends ViewGroup {
 
     private static final String TAG = "SurroundingView";
-    private int surroundingSize = 8;
+    private int surroundingSize = 6;
     private List<AppData> mData;
 
     //ripple
@@ -71,9 +71,6 @@ public class SurroundingView extends ViewGroup {
 
         //不然不触发onDraw
         setWillNotDraw(false);
-
-
-
     }
 
     public SurroundingView(Context context) {
@@ -129,7 +126,11 @@ public class SurroundingView extends ViewGroup {
         if (mIconViews == null || mIconViews.size() ==0)
             return;
 
+
         int childCount = getChildCount();
+
+        float perAngle = 360.f / childCount;
+
         for (int i = 0; i < childCount; i++) {
             View childView = getChildAt(i);
             int childW = childView.getMeasuredWidth();
@@ -143,8 +144,9 @@ public class SurroundingView extends ViewGroup {
 //            int leftPos = (int) (posX - centerX);
 //            int topPos = (int) (posY - centerY);
 //            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
-            int posX = (int)(centerX + maxRadius  * Math.cos(i * 360.f / childCount));
-            int posY = (int) (centerY + maxRadius  *  Math.sin(i * 360.f / childCount));
+            double angleInRadians = Math.toRadians(90 + i * perAngle);
+            int posX = (int)(centerX + maxRadius  * Math.cos(angleInRadians));
+            int posY = (int) (centerY + maxRadius  *  Math.sin(angleInRadians));
             childView.layout(posX - childW/2 , posY - childH/2, posX + childW/2, posY + childH/2);
         }
     }
@@ -163,6 +165,7 @@ public class SurroundingView extends ViewGroup {
     List<View> mIconViews = new ArrayList<>();
 
     private void generateViews(List<AppData> mData) {
+        removeAllViews();
         for (AppData appData : mData) {
             LayoutInflater inflater = LayoutInflater.from(getContext());
             View view = inflater.inflate(R.layout.icon_view, this, false);
