@@ -41,11 +41,11 @@ public class DogeView extends ViewGroup {
 
     //view model
     private AppListViewModel viewModel;
+
     public void setViewModel (AppListViewModel viewModel) {
         this.viewModel = viewModel;
+        surroundingView.generateViews(viewModel.getData().subList(0, 6));
     }
-
-
 
     private GestureDetector gestureDetector;
     private class FlingListener extends GestureDetector.SimpleOnGestureListener {
@@ -92,7 +92,8 @@ public class DogeView extends ViewGroup {
                 case MotionEvent.ACTION_DOWN:
                     switch (displayMode) {
                         case DISPLAY_MODE_SURROUNDING:
-                            surroundingView.showSurroundingApps(event.getX(), event.getY(), viewModel);
+
+                            surroundingView.showSurroundingApps(event.getX(), event.getY());
                             break;
                     }
                     break;

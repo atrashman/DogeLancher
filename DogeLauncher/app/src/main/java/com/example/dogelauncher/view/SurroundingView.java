@@ -7,11 +7,8 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,7 +16,6 @@ import androidx.annotation.Nullable;
 import com.example.dogelauncher.R;
 import com.example.dogelauncher.model.AppData;
 import com.example.dogelauncher.utils.CalculateUtil;
-import com.example.dogelauncher.viewModel.AppListViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +46,7 @@ public class SurroundingView extends ViewGroup {
     public static final int ICON_MAX_SIZE = 288;//px
     public static final int ICON_MIN_SIZE = 144;//可以用最小size来限制app个数
     public static final int ICON_MIN_MARGIN = 15;
-
+    private boolean showApps = false;
 
     //touch
     private boolean isTouching;
@@ -89,7 +85,9 @@ public class SurroundingView extends ViewGroup {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        //测量自己
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (!showApps) return;
 //        measureChildren(widthMeasureSpec, heightMeasureSpec);
         /*
         * 这里因为view都是直接添加进来的，外面的人没办法设置子view的属性
@@ -100,7 +98,7 @@ public class SurroundingView extends ViewGroup {
         * 2 保证APP Icon均匀分布
         * 3 icon绘制大小跟app数量有关
         * */
-
+        //这里逻辑是给子类测量限制
         int childCount = getChildCount();
         if (childCount == 0) {
             return;
@@ -123,10 +121,8 @@ public class SurroundingView extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        if (mIconViews == null || mIconViews.size() ==0)
+        if (mIconViews == null || !showApps )
             return;
-
-
         int childCount = getChildCount();
 
         float perAngle = 360.f / childCount;
@@ -135,15 +131,6 @@ public class SurroundingView extends ViewGroup {
             View childView = getChildAt(i);
             int childW = childView.getMeasuredWidth();
             int childH = childView.getMeasuredHeight();
-//            Log.e(TAG, "onLayout: childW "+childW + " childH "+ childH );
-//            int topPos = (int) (childH * i*0.5f);
-//            int leftPos = 0;
-//            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
-//            float posX = (float) (centerX + maxRadius  * Math.cos(i * 360.f / childCount));
-//            float posY = (float) (centerY + maxRadius  *  Math.sin(i * 360.f / childCount));//- maxRadius
-//            int leftPos = (int) (posX - centerX);
-//            int topPos = (int) (posY - centerY);
-//            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
             double angleInRadians = Math.toRadians(90 + i * perAngle);
             int posX = (int)(centerX + maxRadius  * Math.cos(angleInRadians));
             int posY = (int) (centerY + maxRadius  *  Math.sin(angleInRadians));
@@ -152,11 +139,11 @@ public class SurroundingView extends ViewGroup {
     }
 
 
-    public void showSurroundingApps(float x, float y, AppListViewModel appListViewModel) {
-        List<AppData> data = appListViewModel.getData();
-        mData = data.subList(0, Math.min(data.size(), surroundingSize));
-        generateViews(mData);
-
+    public void showSurroundingApps(float x, float y) {
+        //List<AppData> data = appListViewModel.getData();
+        //mData = data.subList(0, Math.min(data.size(), surroundingSize));
+        //generateViews(mData);
+        showApps = true;
         showRipple(x, y);
         requestLayout();
         invalidate();
@@ -164,15 +151,12 @@ public class SurroundingView extends ViewGroup {
     }
     List<View> mIconViews = new ArrayList<>();
 
-    private void generateViews(List<AppData> mData) {
+    public void generateViews(List<AppData> mData) {
         removeAllViews();
         for (AppData appData : mData) {
-            LayoutInflater inflater = LayoutInflater.from(getContext());
-            View view = inflater.inflate(R.layout.icon_view, this, false);
-            ImageView iv = view.findViewById(R.id.icon);
-            iv.setImageDrawable(appData.getIcon());
-            mIconViews.add(view);
-            addView(view);
+            IconView iconView = new IconView(getContext(),appData.getIcon());
+            mIconViews.add(iconView);
+            addView(iconView);
         }
     }
 
