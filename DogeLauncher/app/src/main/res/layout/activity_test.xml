@@ -18,8 +18,12 @@
 <!--        app:spread_radius="100"-->
 <!--        app:spread_spread_color="@color/purple_700" />-->
 
-    <com.example.dogelauncher.view.DogeView
-        android:id="@+id/doge"
+<!--    <com.example.dogelauncher.view.DogeView-->
+<!--        android:id="@+id/doge"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"/>-->
+    <com.example.dogelauncher.view.MainView
+        android:id="@+id/main_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 

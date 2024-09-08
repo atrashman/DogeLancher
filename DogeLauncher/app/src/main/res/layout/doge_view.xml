@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:android="http://schemas.android.com/apk/res/android">
-    <com.example.dogelauncher.view.SurroundingView
+    <com.example.dogelauncher.view.MainView
         android:id="@+id/surrounding_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>

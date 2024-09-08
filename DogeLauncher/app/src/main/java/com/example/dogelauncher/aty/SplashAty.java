@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.dogelauncher.R;
+import com.example.dogelauncher.viewModel.AppListViewModel;
 
 
 public class SplashAty extends AppCompatActivity {
@@ -35,6 +36,9 @@ public class SplashAty extends AppCompatActivity {
 
         //设置渐变效果
         setAlphaAnimation();
+
+        //开子线程读
+        AppListViewModel.getInstance();
     }
 
     private void setAlphaAnimation() {

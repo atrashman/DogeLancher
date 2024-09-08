@@ -1,6 +1,7 @@
 package com.example.dogelauncher.utils;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -55,14 +56,19 @@ public class AppDataUtil {
 
         List<AppData> appData = new ArrayList<>(packages.size());
 
-//        appData.sort(mDataComparator);
+
 
         for (PackageInfo pkgInfo : packages) {
             ApplicationInfo appInfo = pkgInfo.applicationInfo;
             if(appInfo.loadIcon(context.getPackageManager())==null)
                 continue;
-            if((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0){
-                continue;
+            // 检查是否为系统应用
+            if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                // 使用 PackageManager 获取启动 Intent，判断是否有启动器图标
+                Intent launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName);
+                if (launchIntent == null) {
+                    continue;  // 如果没有启动器图标，跳过
+                }
             }
             AppData data = new AppData(DogeApp.get(), appInfo);
             appData.add(data);

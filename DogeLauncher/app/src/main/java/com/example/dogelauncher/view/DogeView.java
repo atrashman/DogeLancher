@@ -2,16 +2,13 @@ package com.example.dogelauncher.view;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.example.dogelauncher.R;
 import com.example.dogelauncher.viewModel.AppListViewModel;
 
 public class DogeView extends ViewGroup {
@@ -34,7 +31,7 @@ public class DogeView extends ViewGroup {
     private static final int STATUS_UNAVAILABLE = 1;
 
     //view
-    private SurroundingView surroundingView;
+    private MainView mainView;
     private ViewGroup ListingView;
     private ViewGroup editingView;
 
@@ -44,7 +41,7 @@ public class DogeView extends ViewGroup {
 
     public void setViewModel (AppListViewModel viewModel) {
         this.viewModel = viewModel;
-        surroundingView.generateViews(viewModel.getData().subList(0, 6));
+        mainView.generateViews(viewModel.getData().subList(0, 6));
     }
 
     private GestureDetector gestureDetector;
@@ -67,7 +64,7 @@ public class DogeView extends ViewGroup {
             }
             return false;
         }
-
+//18898597241
         @Override
         public boolean onFling(MotionEvent e1, MotionEvent e2,
                                float velocityX, float velocityY) {
@@ -92,8 +89,7 @@ public class DogeView extends ViewGroup {
                 case MotionEvent.ACTION_DOWN:
                     switch (displayMode) {
                         case DISPLAY_MODE_SURROUNDING:
-
-                            surroundingView.showSurroundingApps(event.getX(), event.getY());
+                            mainView.showSurroundingApps(event.getX(), event.getY());
                             break;
                     }
                     break;
@@ -107,17 +103,12 @@ public class DogeView extends ViewGroup {
         initView();
     }
 
-//    public DogeView(Context context, AttributeSet attrs, int defStyleAttr) {
-//        super(context, attrs, defStyleAttr);
-//        initView();
-//    }
 
     public void initView () {
         FlingListener flingListener = new FlingListener();
         gestureDetector = new GestureDetector(getContext(), flingListener);
-        DogeView dogeView = (DogeView)LayoutInflater.from(getContext()).inflate(R.layout.doge_view, this, true);
-        surroundingView = (SurroundingView) dogeView.findViewById(R.id.surrounding_view);//
-
+        mainView = new MainView(getContext());
+        addView(mainView);
         setOnTouchListener(new DogeViewTouchListener());
 
         /*
@@ -128,10 +119,16 @@ public class DogeView extends ViewGroup {
         setBackgroundColor(0x00000000);
     }
 
+
+
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        measureChildren(widthMeasureSpec, heightMeasureSpec);
+        for (int i = 0; i < getChildCount(); i++) {
+            View child = getChildAt(i);
+            child.measure(widthMeasureSpec, heightMeasureSpec);
+        }
     }
 
     @Override
@@ -139,16 +136,20 @@ public class DogeView extends ViewGroup {
 //        [1].必须onMeasure中测量孩子的尺寸，否则无法显示
 //        [2].必须onLayout中布局孩子的位置，否则无法显示
 //        [3].在onLayout中孩子不能用view.getHeight()获取尺寸(因为为0)，只能用view.getMeasuredHeight
-        int childCount = getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            View childView = getChildAt(i);
-            int childW = childView.getMeasuredWidth();
-            int childH = childView.getMeasuredHeight();
-            Log.e(TAG, "onLayout: childW "+childW + " childH "+ childH );
-            int topPos = (int) (childH * i*0.5f);
-            int leftPos = 0;
-            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
-        }
+
+//        int childCount = getChildCount();
+//        for (int i = 0; i < childCount; i++) {
+//            View childView = getChildAt(i);
+//            int childW = childView.getMeasuredWidth();
+//            int childH = childView.getMeasuredHeight();
+//            Log.e(TAG, "onLayout: childW "+childW + " childH "+ childH );
+//            int topPos = 0;
+//            int leftPos = 0;
+//            childView.layout(leftPos, topPos, leftPos + childW, topPos + childH);
+//        }
+        int measuredWidth = mainView.getMeasuredWidth();
+        int measuredHeight = mainView.getMeasuredHeight();
+        mainView.layout(0,0, measuredWidth, measuredHeight);
     }
 
 

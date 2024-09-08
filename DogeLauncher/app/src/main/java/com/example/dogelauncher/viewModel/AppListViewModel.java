@@ -20,13 +20,15 @@ public class AppListViewModel extends ViewModel {
 
     private static final String TAG = "AppListViewModel";
 
+
+
     public static final Executor mExecutor = new ThreadPoolExecutor(4,
             12,
             500,
             TimeUnit.MILLISECONDS,
             new LinkedBlockingDeque<>());
 
-    private final MutableLiveData<List<AppData>> mPkgList = new MutableLiveData<>(AppDataUtil.getInstalledApps());
+    private final MutableLiveData<List<AppData>> mPkgList = new MutableLiveData<>();
 
     private final Runnable mRunnable = () -> {
         final List<AppData> list = AppDataUtil.getAppDataByPMAndSave();
@@ -34,9 +36,27 @@ public class AppListViewModel extends ViewModel {
         mPkgList.postValue(list);
     };
 
-    public AppListViewModel() {
+    private AppListViewModel() {
         super();
     }
+
+    private static AppListViewModel INSTANCE;
+    public static AppListViewModel getInstance() {
+        if(INSTANCE == null) {
+            synchronized (AppListViewModel.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new AppListViewModel();
+                    INSTANCE.loadPackageList();
+                }
+            }
+        }
+        return INSTANCE;
+    }
+
+    public boolean isDataPrepared () {
+        return getData() != null;
+    }
+
 
     public LiveData<List<AppData>> getPackageList() {
         return mPkgList;
