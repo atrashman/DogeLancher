@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
@@ -16,7 +17,7 @@ import com.example.dogelauncher.R;
 
 public class IconView extends View {
 
-    private static final String TAG = "";
+    private static final String TAG = "IconView";
     /*
     * onResume -> onAttachedToWindow ->  onMeasure -> onSizeChanged -> onLayout ->onDraw
     * */
@@ -30,6 +31,14 @@ public class IconView extends View {
     public IconView(Context context, Drawable drawable) {
         super(context);
         this.drawable = drawable;
+        gestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener(){
+            @Override
+            public boolean onDown(@NonNull MotionEvent e) {
+                Log.e(TAG, "iconView onTouchEvent: " );
+//                Toast.makeText(getContext(), "onTouchEvent", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+        });
     }
 
     public void setIconAlpha(float iconAlpha) {
@@ -103,15 +112,24 @@ public class IconView extends View {
         drawable.draw(canvas);
     }
 
+
+    GestureDetector gestureDetector;
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        super.onTouchEvent(event);
+        gestureDetector.onTouchEvent(event);
         switch (event.getAction()) {
-            //event.getAction() & MotionEvent.ACTION_MASK 是为了获取多点触控
             case MotionEvent.ACTION_DOWN:
-                Log.e(TAG, "iconView onTouchEvent: " );
-                Toast.makeText(getContext(), "onTouchEvent", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "onTouchEvent: DOWN" );
+                break;
+            case MotionEvent.ACTION_MOVE:
+                Log.e(TAG, "onTouchEvent: MOVE" );
+                return false;
+            case MotionEvent.ACTION_UP:
+                Log.e(TAG, "onTouchEvent: up" );
+                break;
         }
-
-        return super.onTouchEvent(event);
+        return true;
     }
 }

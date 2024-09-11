@@ -43,10 +43,7 @@ public class TestActivity extends AppCompatActivity {
         } else {
             DogeApp.getGlobalHandler().postDelayed(dataRunable, 2000);
         }
-//        dogeView = (DogeView)findViewById(R.id.doge);
-//        AppListViewModel appListViewModel = new AppListViewModel();
-//        appListViewModel.loadPackageList();
-//        dogeView.setViewModel(appListViewModel);
+
 
     }
 

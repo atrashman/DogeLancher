@@ -89,7 +89,7 @@ public class DogeView extends ViewGroup {
                 case MotionEvent.ACTION_DOWN:
                     switch (displayMode) {
                         case DISPLAY_MODE_SURROUNDING:
-                            mainView.showSurroundingApps(event.getX(), event.getY());
+//                            mainView.showSurroundingApps(event.getX(), event.getY());
                             break;
                     }
                     break;
