@@ -13,7 +13,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.view.animation.RotateAnimation;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
@@ -266,7 +265,7 @@ public class MainView extends ViewGroup {
                 if (appsHalting  && touchingView != null) {
 
                     if (!isMoving(event) && !showAppMenu && event.getEventTime() - lastDownTime > 500) {
-                        Log.e(TAG, "onInterceptTouchEvent: show menu" );
+                        Log.e(TAG, "onInterceptTouchEvent: show menu");
                         showAppMenu = true;
 
                         //展示菜单
@@ -300,68 +299,43 @@ public class MainView extends ViewGroup {
                             invalidate();
                         });
                     } else if (isMoving(event)) {
-                        Log.e(TAG, "onInterceptTouchEvent: isMoving" );
-                        if (popupMenu!=null) popupMenu.dismiss();
+                        Log.e(TAG, "onInterceptTouchEvent: isMoving");
+                        if (popupMenu != null) popupMenu.dismiss();
                         float nowX = event.getX();
                         float nowY = event.getY();
-                        int dx =(int)(nowX - lastX);
-                        int dy =(int)(nowY - lastY);
+                        int dx = (int) (nowX - lastX);
+                        int dy = (int) (nowY - lastY);
+
+                        float lastItemX = touchingView.getLeft();
+                        float lastItemY = touchingView.getTop();
 
                         int left = touchingView.getLeft() + dx;
                         int top = touchingView.getTop() + dy;
                         int right = touchingView.getRight() + dx;
                         int bottom = touchingView.getBottom() + dy;
 
-                        touchingView.layout(left,top,right,bottom);
+                        touchingView.layout(left, top, right, bottom);
 
                         lastX = nowX;
                         lastY = nowY;
-                        //判断位置
-                        int translateId = getTouchingView(nowX, nowY);
+                        //判断位置 不能用list的位置 要用item位置
+                        int appSize = CalculateUtil.calculateAppSize(mIconViews.size(), maxRadius) / 2;
+                        int posId = getTouchingPos(nowX, nowY, appSize, curItemId);
 
-                        if (translateId == -1) return  false;
-                        if (translateId != curItemId) {
-                            float perAngle = 360.f / mIconViews.size();
-                            float halfPerAngel = perAngle / 2;
-                            float beginItemAngle = 90 + curItemId * perAngle;
-                            float toItemAngle = 90 + translateId * perAngle;
-                            if (toItemAngle > beginItemAngle) {
-                                //角度用减法
-                                for (float i = (beginItemAngle + perAngle) % 360; Math.abs(i - toItemAngle) < halfPerAngel; i = (i - perAngle)% 360) {
-                                    int id = getViewIdFromAngel(i, perAngle);
-                                    double radians = Math.toRadians(i);
-                                    View view = mIconViews.get(id);
-//                                    view.setPivotX(view.getMeasuredWidth() /2  + centerX);
-//                                    view.setPivotY(view.getMeasuredHeight() /2 + centerY);
-//                                    view.setRotation(i);
-//                                    ObjectAnimator rotation = ObjectAnimator.ofFloat(view, "rotation", 0f, -perAngle);
-//                                    rotation.setDuration(1000);
-//                                    Log.e(TAG, "onInterceptTouchEvent: rotate" );
-//                                    rotation.start();
-                                    //旋转有大问题！！！！
-                                    RotateAnimation animation = new RotateAnimation(i, i + perAngle,
-                                            view.getMeasuredWidth() /2 - maxRadius * (float) Math.cos(radians),
-                                            view.getMeasuredHeight() /2 - maxRadius * (float) Math.sin(radians));
-                                    animation.setDuration(100);
-                                    animation.setFillAfter(true);
-                                    view.startAnimation(animation);
+                        if (posId == -1) return false;
 
-//                                    animator.setDuration(1000);  // 设置动画时长为 1 秒
-
-                                }
-                            } else {
-                                //角度用减法
-                            }
-
-
+                        //这里确保了curItemId 和 posId 即是位置id 也是mIconViewId
+                        if ((posId + mIconViews.size() / 2 ) % mIconViews.size()  > curItemId) {
                         }
+
+
                     }
-
-
                 }
+
                 return false;
             case MotionEvent.ACTION_UP:
                 touchingView = null;
+                isMoving = false;
                 if (!showAppMenu) {
                     hideApps = true;
                     appsHalting = false;
@@ -608,6 +582,22 @@ public class MainView extends ViewGroup {
     }
 
 
+    private int getTouchingPos (float x, float y, int halfAppSize, int curPos){
+        float perAngle = 360f / mIconViews.size();
+        for (int i = 0; i < mIconViews.size(); i++) {
+            if (i == curPos) continue;
+            float angle = 90 + perAngle * i;
+            double radians = Math.toRadians(angle);
+            double xi = maxRadius * Math.cos(radians) + centerX;
+            double yi = maxRadius * Math.sin(radians) + centerY;
+            int dist = CalculateUtil.calculateDistance(x, y, xi, yi);
+            if (halfAppSize < dist)
+                return i;
+        }
+        return -1;
+
+    }
+
     private int getTouchingView (float x, float y) {
         for (int i = 0; i < mIconViews.size(); i++) {
             View child = mIconViews.get(i);
@@ -639,6 +629,7 @@ public class MainView extends ViewGroup {
     }
 
     private boolean isMoving (MotionEvent event) {
+        if (isMoving) return isMoving;
         float deltaX = lastDownX - event.getX();
         float deltaY = lastDownY - event.getY();
         if (Math.abs (deltaX + deltaY) > 50) isMoving = true;
