@@ -2,6 +2,9 @@ package com.example.dogelauncher.view;
 
 import static android.view.View.MeasureSpec.EXACTLY;
 
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -13,6 +16,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
 import android.widget.PopupMenu;
 import android.widget.Toast;
 
@@ -84,7 +89,7 @@ public class MainView extends ViewGroup {
     private static final int DISPLAY_MODE_EDIT = 2;
     private static int displayMode = DISPLAY_MODE_SURROUNDING;
     private View touchingView;
-
+    private int durationMillis = 300;
 
 
     private void init() {
@@ -102,7 +107,7 @@ public class MainView extends ViewGroup {
 
         //不然不触发onDraw
         setWillNotDraw(false);
-
+        emptyView = new View(getContext());
     }
 
     private void transferDisplayMode (int oldMode, int newMode) {
@@ -153,9 +158,6 @@ public class MainView extends ViewGroup {
             switch (displayMode) {
                 case DISPLAY_MODE_SURROUNDING:
                     if (touchingView != null) {
-//                        if (isOnTouchingView(e.getX(), e.getY())) {
-//                            Log.e(TAG, "onTouch: isOnTouchingView" );
-//                        }
                         Log.e(TAG, "onSingleTapUp: no touchingView" );
                         //touchingView = null;
                     } else {
@@ -165,19 +167,6 @@ public class MainView extends ViewGroup {
                     break;
             }
             return true;
-        }
-
-
-        @Override
-        public boolean onDoubleTap(@NonNull MotionEvent e) {
-            return super.onDoubleTap(e);
-        }
-
-
-        @Override
-        public void onLongPress(@NonNull MotionEvent e) {
-
-            super.onLongPress(e);
         }
 
         @Override
@@ -221,6 +210,7 @@ public class MainView extends ViewGroup {
     private float lastDownX = 0;
     private float lastDownY = 0;
     private int curItemId;
+    private int posId = -1;
     private boolean isMoving = false;
     private float lastX = 0;
     private float lastY = 0;
@@ -240,6 +230,7 @@ public class MainView extends ViewGroup {
                 lastDownY = event.getY();
                 lastX = lastDownX;
                 lastY = lastDownY;
+                touchingView = null;
                 switch (displayMode) {
                     case DISPLAY_MODE_SURROUNDING:
                         if (showApps || hideApps) {
@@ -249,6 +240,7 @@ public class MainView extends ViewGroup {
                             curItemId = getTouchingView(event.getX(), event.getY());
                             if (curItemId == -1 ) break;
                             touchingView = mIconViews.get(curItemId);
+                            mIconViews.set(curItemId, emptyView);
                             //点击了某个app， 需要锁定展示全部app
                             clearhideAppsFlag();
                             clearShowAppsFlag();
@@ -282,7 +274,6 @@ public class MainView extends ViewGroup {
                                     // 处理状态转换
                                     //transferDisplayMode(displayMode, DISPLAY_MODE_EDIT);
                                     //开始绘制编辑模式
-//                                    requestLayout();
 //                                    invalidate();
                                 } else if (itemId == R.id.delete) {
                                     Toast.makeText(getContext(), "deleted", Toast.LENGTH_SHORT).show();
@@ -299,15 +290,12 @@ public class MainView extends ViewGroup {
                             invalidate();
                         });
                     } else if (isMoving(event)) {
-                        Log.e(TAG, "onInterceptTouchEvent: isMoving");
+//                        Log.e(TAG, "onInterceptTouchEvent: isMoving");
                         if (popupMenu != null) popupMenu.dismiss();
                         float nowX = event.getX();
                         float nowY = event.getY();
                         int dx = (int) (nowX - lastX);
                         int dy = (int) (nowY - lastY);
-
-                        float lastItemX = touchingView.getLeft();
-                        float lastItemY = touchingView.getTop();
 
                         int left = touchingView.getLeft() + dx;
                         int top = touchingView.getTop() + dy;
@@ -319,14 +307,14 @@ public class MainView extends ViewGroup {
                         lastX = nowX;
                         lastY = nowY;
                         //判断位置 不能用list的位置 要用item位置
-                        int appSize = CalculateUtil.calculateAppSize(mIconViews.size(), maxRadius) / 2;
-                        int posId = getTouchingPos(nowX, nowY, appSize, curItemId);
+                        int halfAppSize = CalculateUtil.calculateAppSize(mIconViews.size(), maxRadius) / 2;
+                        posId = getTouchingPos(nowX, nowY, halfAppSize, curItemId);
 
-                        if (posId == -1) return false;
-
+                        if (posId == -1 || mIconViews.get(posId) == emptyView) return false;
+                        Log.e(TAG, "onInterceptTouchEvent: curItemId = "+ curItemId + "  posId = "+ posId );
                         //这里确保了curItemId 和 posId 即是位置id 也是mIconViewId
-                        if ((posId + mIconViews.size() / 2 ) % mIconViews.size()  > curItemId) {
-                        }
+//                        if (!movingPos[posId])
+                            animateInClockwise(curItemId, posId);
 
 
                     }
@@ -334,18 +322,211 @@ public class MainView extends ViewGroup {
 
                 return false;
             case MotionEvent.ACTION_UP:
-                touchingView = null;
+                //up和animation end 是不确定哪个先执行的！！！！ 所以不能touchingView = null;
+                if (touchingView != null) {
+                    Log.e(TAG, "onInterceptTouchEvent: touchingView !=null posId = "+ posId);
+                    if (posId != -1) mIconViews.set(posId, touchingView);
+                    curItemId = posId;
+                    requestLayout();
+//                    if (movingAnimationEnd) {
+////                        touchingView = null;
+//                    } else {
+//
+//                    }
+                }
+
                 isMoving = false;
                 if (!showAppMenu) {
                     hideApps = true;
                     appsHalting = false;
+                    invalidate();
                 }
-                invalidate();
+
                 break;
         }
         return true;
 
     }
+
+
+    private void layoutChild (View view, int pos) {
+        float perAngle = 360f / mIconViews.size();
+        double angleInRadians = Math.toRadians(90 + pos * perAngle);
+        int posX = (int) (centerX + maxRadius * Math.cos(angleInRadians));
+        int posY = (int) (centerY + maxRadius * Math.sin(angleInRadians));
+        int childW = view.getMeasuredWidth();
+        int childH = view.getMeasuredHeight();
+        view.layout(posX - childW / 2, posY - childH / 2, posX + childW / 2, posY + childH / 2);
+    }
+
+    private boolean movingAnimationEnd = true;
+
+    private void animateInClockwise(int startPos, int toPos) {
+        boolean clockwise;
+        float perAngle = 360f / mIconViews.size();
+        double angleInRadians = Math.toRadians(90 + startPos * perAngle);
+        int originX = (int) (centerX + maxRadius * Math.cos(angleInRadians));
+        int originY = (int) (centerY + maxRadius * Math.sin(angleInRadians));
+
+        int lastPosX = originX;
+        int lastPosY = originY;
+        if (startPos < toPos) {
+            clockwise = toPos - startPos <= mIconViews.size()/2;
+
+            for (int i = 1; i <= (clockwise ? toPos - startPos : mIconViews.size() - (toPos - startPos) ); i ++) {
+                int curPos;
+                if (clockwise) {
+                    curPos = startPos + i;
+                } else {
+                    curPos = startPos - i ;
+                    curPos = curPos >= 0 ? curPos : curPos + mIconViews.size();
+                }
+                Log.e(TAG, "animateInClockwise: curPos " + curPos );
+                angleInRadians = Math.toRadians(90 + curPos * perAngle);
+                int curPosX = (int) (centerX + maxRadius * Math.cos(angleInRadians));
+                int curPosY = (int) (centerY + maxRadius * Math.sin(angleInRadians));
+
+                // 计算位移
+                float deltaX = lastPosX - curPosX;
+                float deltaY = lastPosY - curPosY;
+
+                // 获取当前的 View
+                View curView = mIconViews.get(curPos);
+                float startX = curView.getTranslationX();
+                float startY = curView.getTranslationY();
+                // 创建 ObjectAnimator 对象，使用 translationX 和 translationY 来平滑移动
+                ObjectAnimator animX = ObjectAnimator.ofFloat(curView, "translationX", startX, startX + deltaX);
+                ObjectAnimator animY = ObjectAnimator.ofFloat(curView, "translationY", startY, startY + deltaY);
+
+                // 设置动画时长
+                animX.setDuration(durationMillis);
+                animY.setDuration(durationMillis);
+
+                // 创建 AnimatorSet 以便同时执行 X 和 Y 方向的动画
+                AnimatorSet animatorSet = new AnimatorSet();
+                animatorSet.playTogether(animX, animY);
+
+                // 监听动画事件
+                int finalCurPos = curPos;
+                animatorSet.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        // 将当前 View 设置为空视图，表示正在移动
+                        mIconViews.set(finalCurPos, emptyView);
+                        movingAnimationEnd = false;
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        // 计算新的位置
+                        int pos = clockwise ? finalCurPos - 1 : (finalCurPos + 1) % mIconViews.size();
+
+                        // 将移动后的 View 重新放回列表
+                        mIconViews.set(pos, curView);
+
+                        // 如果到达目标位置，更新目标 View 和状态
+                        if (toPos == finalCurPos) {
+                            mIconViews.set(toPos, touchingView);
+                            curItemId = toPos;
+                            movingAnimationEnd = true;
+                        }
+                    }
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+                        // 动画取消时的处理（如有需要）
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+                        // 动画重复时的处理（如有需要）
+                    }
+                });
+
+// 开始动画
+                animatorSet.start();
+
+                lastPosX = curPosX;
+                lastPosY = curPosY;
+            }
+        }
+        else {
+            clockwise = startPos - toPos <= mIconViews.size()/2;
+            for (int i = 1; i <= (clockwise ? startPos - toPos : mIconViews.size() - (startPos - toPos)); i ++) {
+                int curPos;
+                if (clockwise) {
+                    curPos = startPos - i;
+                } else {
+                    Log.e(TAG, "animateInClockwise: not clockwise" );
+                    curPos = startPos + i ;
+                    curPos = curPos < mIconViews.size() ? curPos : curPos % mIconViews.size();
+                }
+                angleInRadians = Math.toRadians(90 + curPos * perAngle);
+                int curPosX = (int) (centerX + maxRadius * Math.cos(angleInRadians));
+                int curPosY = (int) (centerY + maxRadius * Math.sin(angleInRadians));
+//
+                float deltaX = lastPosX - curPosX;
+                float deltaY = lastPosY - curPosY;
+
+                // 获取当前的 View
+                View curView = mIconViews.get(curPos);
+                float startX = curView.getTranslationX();
+                float startY = curView.getTranslationY();
+                // 创建 ObjectAnimator 对象，使用 translationX 和 translationY 来平滑移动
+                ObjectAnimator animX = ObjectAnimator.ofFloat(curView, "translationX", startX, startX + deltaX);
+                ObjectAnimator animY = ObjectAnimator.ofFloat(curView, "translationY", startY, startY + deltaY);
+
+                // 设置动画时长
+                animX.setDuration(durationMillis);
+                animY.setDuration(durationMillis);
+
+                // 创建 AnimatorSet 以便同时执行 X 和 Y 方向的动画
+                AnimatorSet animatorSet = new AnimatorSet();
+                animatorSet.playTogether(animX, animY);
+                // 监听动画事件
+                int finalCurPos = curPos;
+                animatorSet.addListener(new Animator.AnimatorListener() {
+                    @Override
+                    public void onAnimationStart(Animator animation) {
+                        // 将当前 View 设置为空视图，表示正在移动
+                        mIconViews.set(finalCurPos, emptyView);
+                        movingAnimationEnd = false;
+                    }
+
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        // 计算新的位置
+                        int pos = clockwise ? finalCurPos + 1 : (finalCurPos - 1) >= 0 ? (finalCurPos - 1) : (finalCurPos - 1) + mIconViews.size();
+
+                        // 将移动后的 View 重新放回列表
+                        mIconViews.set(pos, curView);
+
+                        // 如果到达目标位置，更新目标 View 和状态
+                        if (toPos == finalCurPos) {
+                            mIconViews.set(toPos, touchingView);
+                            curItemId = toPos;
+                            movingAnimationEnd = true;
+                        }
+
+                    }
+                    @Override
+                    public void onAnimationCancel(Animator animation) {
+                        // 动画取消时的处理（如有需要）
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
+                        // 动画重复时的处理（如有需要）
+                    }
+                });
+                animatorSet.start();
+
+                lastPosX = curPosX;
+                lastPosY = curPosY;
+
+            }
+        }
+    }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -397,20 +578,24 @@ public class MainView extends ViewGroup {
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         Log.e(TAG, "onLayout: " );
-        if (!showApps)
-            return;
-
+//        if (!showApps)
+//            return;
         int childCount = mIconViews.size();
-
+//        Log.e(TAG, "onLayout: mIconViews" + mIconViews);
         float perAngle = 360.f / childCount;
 
         for (int i = 0; i < childCount; i++) {
+//            Log.e(TAG, "onLayout: i = " + i );
             View childView = mIconViews.get(i);
+//            if (childView == null || childView == emptyView) childView = touchingView;
             int childW = childView.getMeasuredWidth();
             int childH = childView.getMeasuredHeight();
             double angleInRadians = Math.toRadians(90 + i * perAngle);
             int posX = (int) (centerX + maxRadius * Math.cos(angleInRadians));
             int posY = (int) (centerY + maxRadius * Math.sin(angleInRadians));
+            childView.setTranslationX(0);
+            childView.setTranslationY(0);
+//            Log.e(TAG, "onLayout: dist = " + CalculateUtil.calculateDistance(posX, posY, centerX, centerY) );
             childView.layout(posX - childW / 2, posY - childH / 2, posX + childW / 2, posY + childH / 2);
         }
     }
@@ -435,13 +620,14 @@ public class MainView extends ViewGroup {
     }
 
     List<View> mIconViews = new ArrayList<>();
+    View emptyView;
     public void generateViews(List<AppData> mData) {
         removeAllViews();
+        int i = 0;
         for (AppData appData : mData) {
             IconView iconView = new IconView(getContext(), appData.getIcon());
             iconView.setPkgName(appData.getPkgName());
             mIconViews.add(iconView);
-
             iconView.setVisibility(View.GONE);
             addView(iconView);
         }
@@ -481,7 +667,7 @@ public class MainView extends ViewGroup {
 
     private boolean shouldDraw = false;
     private void clearRippleFlag() {
-        Log.e(TAG, "clearRippleFlag: " );
+//        Log.e(TAG, "clearRippleFlag: " );
         rippleProgress = 0;
 //        showApps = false;
         ripple = false;
@@ -489,13 +675,13 @@ public class MainView extends ViewGroup {
     }
 
     private void clearShowAppsFlag() {
-        Log.e(TAG, "clearShowAppsFlag: " );
+//        Log.e(TAG, "clearShowAppsFlag: " );
         showAppsProgress = 0;
         showApps = false;
         shouldDraw = false;
     }
     private void clearhideAppsFlag() {
-        Log.e(TAG, "clearhideAppsFlag: " );
+//        Log.e(TAG, "clearhideAppsFlag: " );
         hideAppsProgress = 0;
         hideApps = false;
         shouldDraw = false;
@@ -525,7 +711,7 @@ public class MainView extends ViewGroup {
             //延迟更新
             invalidateMode = Math.max(INVALIDATE_MODE_POST_DELAY_SHORT, invalidateMode);
         }
-        Log.e(TAG, "onDraw: rippleProgress = "+ rippleProgress);
+//        Log.e(TAG, "onDraw: rippleProgress = "+ rippleProgress);
         rippleProgress += DELAY_MILLISECONDS_SHORT / curDrawingTime;
         if (rippleProgress >= 1) clearRippleFlag();
         else {
@@ -538,7 +724,7 @@ public class MainView extends ViewGroup {
     private void drawAppsToVisible() {
         float alpha;
         alpha = showAppsProgress * rippleCircleNum;
-        Log.e(TAG, "setIconAlpha: alpha " + alpha );
+//        Log.e(TAG, "setIconAlpha: alpha " + alpha );
         for (int i = 0; i < getChildCount(); i++) {
             ((IconView) getChildAt(i)).setIconAlpha(alpha > 1 ? 1 : alpha);
         }
@@ -563,7 +749,7 @@ public class MainView extends ViewGroup {
     private void drawAppsToInvisible(){
         float alpha;
         alpha = 1 - hideAppsProgress;
-        Log.e(TAG, "setIconAlpha: alpha " + alpha );
+//        Log.e(TAG, "setIconAlpha: alpha " + alpha );
         for (int i = 0; i < getChildCount(); i++) {
             ((IconView) getChildAt(i)).setIconAlpha(alpha < 0 ? 0 : alpha);
         }
@@ -591,7 +777,7 @@ public class MainView extends ViewGroup {
             double xi = maxRadius * Math.cos(radians) + centerX;
             double yi = maxRadius * Math.sin(radians) + centerY;
             int dist = CalculateUtil.calculateDistance(x, y, xi, yi);
-            if (halfAppSize < dist)
+            if (halfAppSize > dist)
                 return i;
         }
         return -1;
@@ -636,5 +822,9 @@ public class MainView extends ViewGroup {
         return isMoving;
     }
 
+
+//    private boolean setMovingEnd () {
+//        Arrays.fill(movingPos, false);
+//    }
 
 }

@@ -40,15 +40,15 @@ public class CalculateUtil {
         return Math.max (realSize, MainView.ICON_MIN_SIZE);
     }
 
-    public static int calculateDistance (float x1, float x2, float y1, float y2) {
-        float deltaX = x1 - x2;
-        float deltaY = y1 - y2;
-        return  (int) (deltaX * deltaX - deltaY * deltaY);
-    }
-
-    public static int calculateDistance (float x1, float x2, double y1, double y2) {
+    public static int calculateDistance (float x1, float y1, float x2, float y2) {
         double deltaX = x1 - x2;
         double deltaY = y1 - y2;
-        return  (int) (deltaX * deltaX - deltaY * deltaY);
+        return  (int) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    }
+
+    public static int calculateDistance (float x1, float y1, double x2, double y2) {
+        double deltaX = x1 - x2;
+        double deltaY = y1 - y2;
+        return  (int) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
     }
 }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout
+xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <data>
+        <variable
+            name="mainViewModel"
+            type="com.example.dogelauncher.viewModel.AppListViewModel"/>
+    </data>
+
+<FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <com.example.dogelauncher.view.MainView
+        android:id="@+id/main_view"
+        android:visibility="@{mainViewModel.surroundingMode ? mainViewModel.VISIBLE : mainViewModel.GONE}"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+<!--    @{mainViewModel.surroundingMode ? mainViewModel.VISIBLE : mainViewModel.GONE}-->
+    <com.example.dogelauncher.view.AppListView
+        android:id="@+id/app_list_view"
+        android:visibility="@{mainViewModel.listingMode ? mainViewModel.VISIBLE : mainViewModel.GONE}"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+<!--    "@{mainViewModel.listingMode ? mainViewModel.VISIBLE : mainViewModel.GONE}"-->
+</FrameLayout>
+
+
+</layout>

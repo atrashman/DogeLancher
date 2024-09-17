@@ -38,9 +38,12 @@ public class AppData extends LitePalSupport {
     @Column(ignore = true)
     private Drawable icon;
 
-    //位置 网格布局中的位置
+
+    //位置 网格布局中的位置  pos为0表示在某个组内 pos为-1表示不在
     private int pos;
 
+    // 根据group生成一个
+    private int groupID;
 
     public AppData() {
         context = DogeApp.get();

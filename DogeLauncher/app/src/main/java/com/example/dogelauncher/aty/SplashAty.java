@@ -55,7 +55,7 @@ public class SplashAty extends AppCompatActivity {
             public void onAnimationEnd(Animation animation) {
                 Intent intent = new Intent();
                 ComponentName componentName = new ComponentName(getApplication().getPackageName(),
-                        getApplication().getPackageName() + ".test.TestActivity");//.test.TestActivity   //.aty.MainActivity
+                        getApplication().getPackageName() + ".aty.MainActivity");//.test.TestActivity   //.aty.MainActivity
                 intent.setComponent(componentName);
                 startActivity(intent);
                 overridePendingTransition(R.anim.right_2_left, R.anim.left_2_right);

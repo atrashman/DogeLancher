@@ -121,13 +121,13 @@ public class IconView extends View {
         gestureDetector.onTouchEvent(event);
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                Log.e(TAG, "onTouchEvent: DOWN" );
+//                Log.e(TAG, "onTouchEvent: DOWN" );
                 break;
             case MotionEvent.ACTION_MOVE:
-                Log.e(TAG, "onTouchEvent: MOVE" );
+//                Log.e(TAG, "onTouchEvent: MOVE" );
                 return false;
             case MotionEvent.ACTION_UP:
-                Log.e(TAG, "onTouchEvent: up" );
+//                Log.e(TAG, "onTouchEvent: up" );
                 break;
         }
         return true;
