@@ -29,7 +29,7 @@ public class AppListViewModel extends ViewModel {
     public static final int MODE_LISTING = 1;
     public static final int MODE_EDIT = 2;
 
-    public MutableLiveData<Integer> mode = new MutableLiveData<>(MODE_SURROUNDING);
+    public MutableLiveData<Integer> mode = new MutableLiveData<>(MODE_LISTING);
 
 
     public void setMode(int mode) {
