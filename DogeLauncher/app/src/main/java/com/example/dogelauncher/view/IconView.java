@@ -24,7 +24,7 @@ public class IconView extends View {
     private Drawable drawable;
 
 
-    private float mIconAlpha;
+    private float mIconAlpha = 1;
     private String pkgName;
 
 

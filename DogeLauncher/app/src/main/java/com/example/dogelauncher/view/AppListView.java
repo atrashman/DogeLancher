@@ -3,7 +3,6 @@ package com.example.dogelauncher.view;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.ViewGroup;
 
 import com.example.dogelauncher.model.AppData;
 import com.example.dogelauncher.viewModel.AppListViewModel;
@@ -11,22 +10,25 @@ import com.example.dogelauncher.viewModel.AppListViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AppListView extends ViewGroup {
+public class AppListView extends CellView {
 
     //屏幕分成：7 * 4
-    public static final int GRID_ROW_NUM = 7;
+    public static final int GRID_ROW_NUM = 6;
     public static final int GRID_COLUMN_NUM = 4;
 
     private AppListViewModel appListViewModel;
-
+    private boolean[][] pos;
 
     public AppListView(Context context) {
         super(context);
     }
 
     public AppListView(Context context, AttributeSet attrs) {
-        super(context, attrs);
+        super(context,attrs);
+        row = GRID_ROW_NUM;
+        col = GRID_COLUMN_NUM;
     }
+
 
 
     List<View> mCellViews;
@@ -39,14 +41,13 @@ public class AppListView extends ViewGroup {
          * */
 
         for (int i = 0;i < data.size(); i ++) {
-            mCellViews.add(new CellView(getContext(), data.get(i)));
-            
+            CellView cellView = new CellView(getContext(), data.get(i));
+            mCellViews.add(cellView);
+            addView(mCellViews.get(i));
         }
+        requestLayout();
+
 
     }
 
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-
-    }
 }

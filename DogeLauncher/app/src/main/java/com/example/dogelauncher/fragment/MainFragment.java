@@ -1,6 +1,7 @@
 package com.example.dogelauncher.fragment;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,7 +13,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.dogelauncher.R;
 import com.example.dogelauncher.app.DogeApp;
 import com.example.dogelauncher.databinding.FragmentMainBinding;
 import com.example.dogelauncher.view.AppListView;
@@ -21,6 +21,7 @@ import com.example.dogelauncher.viewModel.AppListViewModel;
 
 public class MainFragment extends Fragment {
 
+    private static final String TAG = "MainFragment";
 
     public static final int MODE_SURROUNDING = 0;
     public static final int MODE_LISTING = 1;
@@ -32,36 +33,38 @@ public class MainFragment extends Fragment {
     //view
     private MainView mainView;
     private AppListView appListView;
-
+    private com.example.dogelauncher.databinding.FragmentMainBinding mainBinding;
 
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        final ViewModelProvider provider = new ViewModelProvider(requireActivity());
+        appListViewModel = provider.get(AppListViewModel.class);
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        final ViewModelProvider provider = new ViewModelProvider(requireActivity());
-        appListViewModel = provider.get(AppListViewModel.class);
 
-
-        FragmentMainBinding mainBinding =   FragmentMainBinding.inflate(inflater, container, false);
+        mainBinding = FragmentMainBinding.inflate(inflater, container, false);
         mainBinding.setLifecycleOwner(getViewLifecycleOwner());
         mainBinding.setMainViewModel(appListViewModel);
 
         View view = mainBinding.getRoot();
-        mainView = view.findViewById(R.id.main_view);
+        Log.e(TAG, "onCreateView: appListView " + mainBinding.appListView );
+
         if (appListViewModel.isDataPrepared()) {
-            mainView.generateViews(appListViewModel.getData().subList(0, 6));
+            mainBinding.mainView.generateViews(appListViewModel.getData().subList(0, 6));
+            mainBinding.appListView.generateViews(appListViewModel);
+            setObserver();
         } else {
             DogeApp.getGlobalHandler().postDelayed(loadData, 2000);
         }
-        appListView = view.findViewById(R.id.app_list_view);
 
-        setObserver();
+//        mainView.setVisibility(View.GONE);
+//        appListView.setVisibility(View.VISIBLE);
+
 
 
         return view;
@@ -71,14 +74,16 @@ public class MainFragment extends Fragment {
         appListViewModel.mode.observe(getViewLifecycleOwner(), new Observer<Integer>() {
             @Override
             public void onChanged(Integer integer) {
+//                if(mainView == null || appListView == null) DogeApp.getGlobalHandler().postDelayed(loadData, 2000);
+                Log.e(TAG, "onChanged: integer = " + integer );
                 switch (integer) {
                     case MODE_SURROUNDING:
-                        mainView.setVisibility(View.VISIBLE);
-                        appListView.setVisibility(View.GONE);
+                        mainBinding.mainView.setVisibility(View.VISIBLE);
+                        mainBinding.appListView.setVisibility(View.GONE);
                         break;
                     case MODE_LISTING:
-                        mainView.setVisibility(View.GONE);
-                        appListView.setVisibility(View.VISIBLE);
+                        mainBinding.mainView.setVisibility(View.GONE);
+                        mainBinding.appListView.setVisibility(View.VISIBLE);
                         break;
                 }
             }
@@ -92,8 +97,8 @@ public class MainFragment extends Fragment {
         @Override
         public void run() {
             if (appListViewModel.isDataPrepared()) {
-                mainView.generateViews(appListViewModel.getData().subList(0, 6));
-                appListView.generateViews(appListViewModel);
+                mainBinding.mainView.generateViews(appListViewModel.getData().subList(0, 6));
+                mainBinding.appListView.generateViews(appListViewModel);
             } else {
                 Toast.makeText(getActivity(), "working for data!", Toast.LENGTH_SHORT).show();
                 DogeApp.getGlobalHandler().postDelayed(this, 2000);
