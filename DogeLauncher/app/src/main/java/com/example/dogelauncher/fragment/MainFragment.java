@@ -58,6 +58,7 @@ public class MainFragment extends Fragment {
             mainBinding.mainView.generateViews(appListViewModel.getData().subList(0, 6));
             mainBinding.appListView.generateViews(appListViewModel);
             setObserver();
+            appListViewModel.setMode(MODE_LISTING);
         } else {
             DogeApp.getGlobalHandler().postDelayed(loadData, 2000);
         }
@@ -99,6 +100,8 @@ public class MainFragment extends Fragment {
             if (appListViewModel.isDataPrepared()) {
                 mainBinding.mainView.generateViews(appListViewModel.getData().subList(0, 6));
                 mainBinding.appListView.generateViews(appListViewModel);
+                setObserver();
+                appListViewModel.setMode(MODE_LISTING);
             } else {
                 Toast.makeText(getActivity(), "working for data!", Toast.LENGTH_SHORT).show();
                 DogeApp.getGlobalHandler().postDelayed(this, 2000);

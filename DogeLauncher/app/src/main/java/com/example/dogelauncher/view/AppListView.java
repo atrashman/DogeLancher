@@ -27,6 +27,7 @@ public class AppListView extends CellView {
         super(context,attrs);
         row = GRID_ROW_NUM;
         col = GRID_COLUMN_NUM;
+        init();
     }
 
 
