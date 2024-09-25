@@ -17,6 +17,13 @@ public class CellView extends ViewGroup {
 
     private static final String TAG = "CellView";
 
+//    public static final Map<Integer, Integer> level2Grid = new HashMap<Integer, Integer>(){
+//        {
+//            put(1, 40 * DogeApp.dpiTimes);
+//            put(2, )
+//        }
+//    };
+
     //默认为1
     public int row = 1;
     public int col = 1;
@@ -112,35 +119,30 @@ public class CellView extends ViewGroup {
 
 
         int widSpec;
+        int widSize = MeasureSpec.getSize(widthMeasureSpec);
+        int perWidSize = widSize / col;
         int heiSpec;
+        int heiSize = MeasureSpec.getSize(heightMeasureSpec);
+        int perHeiSize = heiSize / row;
         int widMode = MeasureSpec.getMode(widthMeasureSpec);
         if (widMode == MeasureSpec.UNSPECIFIED || widMode == MeasureSpec.AT_MOST) {
-            widSpec = MeasureSpec.makeMeasureSpec(col * SIZE_PER_OUTER_GRID, MeasureSpec.EXACTLY);
+            widSpec = MeasureSpec.makeMeasureSpec(widSize, MeasureSpec.EXACTLY);
         } else {
             widSpec = widthMeasureSpec;
         }
 
         int heiMode = MeasureSpec.getMode(heightMeasureSpec);
         if (heiMode == MeasureSpec.UNSPECIFIED || heiMode == MeasureSpec.AT_MOST) {
-            heiSpec = MeasureSpec.makeMeasureSpec(row * SIZE_PER_OUTER_GRID, MeasureSpec.EXACTLY);
+            heiSpec = MeasureSpec.makeMeasureSpec(perWidSize * row, MeasureSpec.EXACTLY);
         } else {
             heiSpec = heightMeasureSpec;
         }
 
-//        switch (iconTag) {
-//            case ICON_TAG_SINGLE:
-//                widSpec = widthMeasureSpec;
-//                heiSpec = heightMeasureSpec;
-//                break;
-//            case ICON_TAG_GROUP:
-//
-//        }
         setMeasuredDimension(widSpec, heiSpec);
-        int widPerGrid = MeasureSpec.getSize(widSpec) / col;
-        int heiPerGrid = MeasureSpec.getSize(heiSpec) / row;
 
         //非AppListView都只能是方形
-        int perGridSizeSpec = MeasureSpec.makeMeasureSpec(widPerGrid, MeasureSpec.EXACTLY);
+        int perGridSize = perWidSize;
+        int marginSize = perGridSize / 4;
 
         switch (iconTag) {
             case ICON_TAG_SINGLE:
@@ -154,19 +156,26 @@ public class CellView extends ViewGroup {
                 int childCount = getChildCount();
                 for (int i = 0; i < childCount; i++) {
                     View childView = getChildAt(i);
-                    if (childView instanceof IconView) {
-                        childView.measure(perGridSizeSpec, perGridSizeSpec);
-                    }// 其余组件类型的可能要换测量大小
-                    else if (childView instanceof CellView) {
+                    if (childView instanceof CellView) {
                         CellView cellView = (CellView) childView;
-                        childView.measure(MeasureSpec.makeMeasureSpec(cellView.col * widPerGrid - 2 * ICON_MARGIN, MeasureSpec.EXACTLY ),
-                                MeasureSpec.makeMeasureSpec(cellView.row * heiPerGrid - 2 * ICON_MARGIN, MeasureSpec.EXACTLY ));
+                        childView.measure(MeasureSpec.makeMeasureSpec(perGridSize * cellView.col - 2 * marginSize, MeasureSpec.EXACTLY ),
+                                MeasureSpec.makeMeasureSpec(cellView.row * perGridSize - 2 * marginSize, MeasureSpec.EXACTLY ));
                     } else {
-                        //装的是控件，如时钟等 一个控件套满一个cellview
-                        int wid = col * SIZE_PER_OUTER_GRID - 2 * ICON_MARGIN;
-                        int hei = row * SIZE_PER_OUTER_GRID - 2 * ICON_MARGIN;
-                        childView.measure(MeasureSpec.makeMeasureSpec(wid, MeasureSpec.EXACTLY ), MeasureSpec.makeMeasureSpec(hei, MeasureSpec.EXACTLY ));
+                        childView.measure(widSpec, heiSpec);
                     }
+//                    if (childView instanceof IconView) {
+//                        childView.measure(perGridSizeSpec, perGridSizeSpec);
+//                    }// 其余组件类型的可能要换测量大小
+//                    else if (childView instanceof CellView) {
+//                        CellView cellView = (CellView) childView;
+//                        childView.measure(MeasureSpec.makeMeasureSpec(cellView.col * perGridSizeSpec - 2 * ICON_MARGIN, MeasureSpec.EXACTLY ),
+//                                MeasureSpec.makeMeasureSpec(cellView.row * heiPerGrid - 2 * ICON_MARGIN, MeasureSpec.EXACTLY ));
+//                    } else {
+//                        //装的是控件，如时钟等 一个控件套满一个cellview
+//                        int wid = col * SIZE_PER_OUTER_GRID - 2 * ICON_MARGIN;
+//                        int hei = row * SIZE_PER_OUTER_GRID - 2 * ICON_MARGIN;
+//                        childView.measure(MeasureSpec.makeMeasureSpec(wid, MeasureSpec.EXACTLY ), MeasureSpec.makeMeasureSpec(hei, MeasureSpec.EXACTLY ));
+//                    }
                 }
                 break;
         }
@@ -188,7 +197,7 @@ public class CellView extends ViewGroup {
                 View child = getChildAt(0);
                 if (child != null) {
                     //child.layout的参数是对父来说的
-                    child.layout(ICON_MARGIN, ICON_MARGIN, ICON_MARGIN + measuredWidth, ICON_MARGIN + measuredHeight);
+                    child.layout(0, 0,  measuredWidth, measuredHeight);
                 }
                 break;
             case ICON_TAG_LIST:
@@ -199,28 +208,29 @@ public class CellView extends ViewGroup {
 
                 for (int i = 0; i < childCount; i++) {
                     View childView = getChildAt(i);
-                    if (childView instanceof IconView) {
-                        if (curRow + 1 >= row) {
-                            //放不下去了
-                            return;
-                        }
-                        while (curCol + 1 >= col && curRow < row) {
-                            curRow += 1;
-                            curCol = 0;
-                        }
-                        if (curRow >= row) {
-                            //放不下了
-                            break;
-                        } else {
-                            int childL = curCol * perWidSize + ICON_MARGIN;
-                            int childT = curRow * perHeiSize + ICON_MARGIN;
-                            int childR = childL + childView.getMeasuredWidth();
-                            int childB = childT + childView.getMeasuredHeight();
-                            childView.layout(childL, childT, childR, childB);
-                            pos[curRow] [curCol] = true;
-                            curCol += 1;
-                        }
-                    } else if (childView instanceof CellView) {
+//                    if (childView instanceof IconView) {
+//                        if (curRow + 1 >= row) {
+//                            //放不下去了
+//                            return;
+//                        }
+//                        while (curCol + 1 >= col && curRow < row) {
+//                            curRow += 1;
+//                            curCol = 0;
+//                        }
+//                        if (curRow >= row) {
+//                            //放不下了
+//                            break;
+//                        } else {
+//                            int childL = curCol * perWidSize + ICON_MARGIN;
+//                            int childT = curRow * perHeiSize + ICON_MARGIN;
+//                            int childR = childL + childView.getMeasuredWidth();
+//                            int childB = childT + childView.getMeasuredHeight();
+//                            childView.layout(childL, childT, childR, childB);
+//                            pos[curRow] [curCol] = true;
+//                            curCol += 1;
+//                        }
+//                    } else
+                    if (childView instanceof CellView) {
                         //为了方便 内部只允许cellView为正方形
                         CellView cellView = (CellView) childView;
 
@@ -240,8 +250,8 @@ public class CellView extends ViewGroup {
                                 curCol = 0;
                             } else {
                                 //can layout
-                                int childL = curCol * perWidSize + ICON_MARGIN;
-                                int childT = curRow * perHeiSize + ICON_MARGIN;
+                                int childL = curCol * perWidSize + perWidSize / 4;
+                                int childT = curRow * perHeiSize + perHeiSize / 4;
                                 int childR = childL + childView.getMeasuredWidth();
                                 int childB = childT + childView.getMeasuredHeight();
                                 childView.layout(childL, childT, childR, childB);
