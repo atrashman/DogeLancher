@@ -5,24 +5,29 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.widget.PopupMenu;
+import android.widget.Toast;
 
+import androidx.annotation.BoolRes;
+import androidx.annotation.NonNull;
+
+import com.example.dogelauncher.R;
 import com.example.dogelauncher.app.DogeApp;
 import com.example.dogelauncher.model.AppData;
+import com.example.dogelauncher.utils.CalculateUtil;
 
+import java.util.HashSet;
 import java.util.List;
 
-public class CellView extends ViewGroup {
+public class CellView extends ViewGroup implements OnCellViewScrollListener {
 
     private static final String TAG = "CellView";
-
-//    public static final Map<Integer, Integer> level2Grid = new HashMap<Integer, Integer>(){
-//        {
-//            put(1, 40 * DogeApp.dpiTimes);
-//            put(2, )
-//        }
-//    };
 
     //默认为1
     public int row = 1;
@@ -41,6 +46,7 @@ public class CellView extends ViewGroup {
 
     public int iconTag = ICON_TAG_SINGLE;
 
+    private boolean touchable = true;
 
 
 
@@ -48,6 +54,7 @@ public class CellView extends ViewGroup {
     private List<AppData> appDatas;
 
     private boolean[][] pos;
+    private PopupMenu popupMenu;
 
     public CellView (Context context) {
         super(context);
@@ -56,6 +63,7 @@ public class CellView extends ViewGroup {
     public CellView (Context context,AttributeSet attrs) {
         super(context,attrs);
         iconTag = ICON_TAG_LIST;
+        setClipChildren(true);
     }
 
     public CellView(Context context, AppData appData) {
@@ -65,6 +73,7 @@ public class CellView extends ViewGroup {
         row = 1;
         col = 1;
         addView(new IconView(context, appData.getIcon()));
+        touchable = false;
         init();
     }
 
@@ -87,12 +96,56 @@ public class CellView extends ViewGroup {
     }
 
 
+    private TouchableView[][] pos2TouchableView;
     public void init() {
         // 设置背景，带透明度和圆角
         pos = new boolean[row][col];
         showBg();
     }
 
+    public void createPosInfo () {
+        pos2TouchableView = new TouchableView[row][col];
+        int childCount = getChildCount();
+
+        int curRow = 0;
+        int curCol = 0;
+        for (int i = 0;i < childCount;i ++) {
+            CellView cellView = (CellView)getChildAt(i);
+            TouchableView touchableView = new TouchableView();
+            touchableView.touchingView = cellView;
+
+            boolean found = false;
+            while (!found) {
+                if (curRow + cellView.row - 1 >= row) {
+                    //放不下去了
+                    throw new RuntimeException("摆放不合理！！！！");
+                }
+                while (curCol + cellView.col - 1 < col ) {
+                    int num = canLayout (curRow, curCol, cellView.col, pos2TouchableView);
+                    if (num == 0) break;
+                    curCol += num;
+                }
+
+                if (curCol + cellView.col - 1 >= col) {
+                    curRow += 1;
+                    curCol = 0;
+                } else {
+                    //can layout
+                    touchableView.touchingViewPosRow = curRow;
+                    touchableView.touchingViewPosCol = curCol;
+
+                    calculateCenter(curRow, curCol, cellView.row, cellView.col, touchableView);
+                    setPos(curRow, curCol, cellView.col, pos2TouchableView, touchableView);
+                    curCol += cellView.col;
+                    found = true;
+
+                }
+            }
+            if (!found) {
+                Log.e(TAG, "createPosInfo: " + "cant layout (too large)" );
+            }
+        }
+    }
 
 
     private void  showBg () {
@@ -112,6 +165,8 @@ public class CellView extends ViewGroup {
 
         return backgroundDrawable;
     }
+
+
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -163,19 +218,6 @@ public class CellView extends ViewGroup {
                     } else {
                         childView.measure(widSpec, heiSpec);
                     }
-//                    if (childView instanceof IconView) {
-//                        childView.measure(perGridSizeSpec, perGridSizeSpec);
-//                    }// 其余组件类型的可能要换测量大小
-//                    else if (childView instanceof CellView) {
-//                        CellView cellView = (CellView) childView;
-//                        childView.measure(MeasureSpec.makeMeasureSpec(cellView.col * perGridSizeSpec - 2 * ICON_MARGIN, MeasureSpec.EXACTLY ),
-//                                MeasureSpec.makeMeasureSpec(cellView.row * heiPerGrid - 2 * ICON_MARGIN, MeasureSpec.EXACTLY ));
-//                    } else {
-//                        //装的是控件，如时钟等 一个控件套满一个cellview
-//                        int wid = col * SIZE_PER_OUTER_GRID - 2 * ICON_MARGIN;
-//                        int hei = row * SIZE_PER_OUTER_GRID - 2 * ICON_MARGIN;
-//                        childView.measure(MeasureSpec.makeMeasureSpec(wid, MeasureSpec.EXACTLY ), MeasureSpec.makeMeasureSpec(hei, MeasureSpec.EXACTLY ));
-//                    }
                 }
                 break;
         }
@@ -231,7 +273,6 @@ public class CellView extends ViewGroup {
 //                        }
 //                    } else
                     if (childView instanceof CellView) {
-                        //为了方便 内部只允许cellView为正方形
                         CellView cellView = (CellView) childView;
 
                         boolean found = false;
@@ -241,7 +282,7 @@ public class CellView extends ViewGroup {
                                 break;
                             }
 
-                            while (curCol + cellView.col - 1 < col && !canLayout (curRow, curCol, cellView.col)) {
+                            while (curCol + cellView.col - 1 < col && !canLayout (curRow, curCol, cellView.col, pos)) {
                                 curCol ++;
                             }
 
@@ -265,8 +306,8 @@ public class CellView extends ViewGroup {
                         }
                     } else {
                         //单独的一个控件  cellview单独包裹一个控件 不管其他情况
-                        int childL = ICON_MARGIN;
-                        int childT = ICON_MARGIN;
+                        int childL = 0;
+                        int childT = 0;
                         int childR = childL + childView.getMeasuredWidth();
                         int childB = childT + childView.getMeasuredHeight();
                         childView.layout(childL, childT, childR, childB);
@@ -284,7 +325,7 @@ public class CellView extends ViewGroup {
         }
     }
 
-    private boolean canLayout (int r, int c, int size) {
+    private boolean canLayout (int r, int c, int size, boolean[][] pos) {
         int curR = r;
         int curC = c;
 
@@ -299,4 +340,200 @@ public class CellView extends ViewGroup {
         return true;
     }
 
+    private int canLayout (int r, int c, int size, TouchableView[][] pos) {
+        int curR = r;
+        int curC = c;
+
+        while (curR < r + size) {
+            while (curC < c + size) {
+                if (pos[r][c] != null) return curC - c + 1;
+                curC ++;
+            }
+            curR ++;
+            curC = c;
+        }
+        return 0;
+    }
+    private void setPos(int curRow, int curCol, int size, TouchableView[][] pos, TouchableView view) {
+        for (int i = curRow; i < curRow + size; i ++ ) {
+            for (int j = curCol; j < curCol + size; j ++) {
+                pos[i][j] = view;
+            }
+        }
+    }
+    private void calculateCenter(int curRow, int curCol, int childRow, int childCol, TouchableView touchableView) {
+        int perWidSize = getMeasuredWidth() / col;
+        int perHeiSize = getMeasuredHeight() / row;
+
+        float childRowF = (float) childRow;
+        float childColF = (float) childCol;
+
+        float centerX = perWidSize * curCol + childColF / 2 * perWidSize;
+        float centerY = perHeiSize * curRow + childRowF /2 * perHeiSize;
+
+        touchableView.centerX = centerX;
+        touchableView.centerY = centerY;
+
+    }
+
+
+    private GestureDetector gestureDetector = new GestureDetector(getContext(), );
+
+
+    private class DragDetector extends GestureDetector.SimpleOnGestureListener {
+        private final int minimumVelocity = ViewConfiguration.get(getContext()).getScaledMinimumFlingVelocity();
+
+        private DragDetector() {
+
+        }
+
+        @Override
+        public boolean onSingleTapUp(@NonNull MotionEvent e) {
+            switch (iconTag) {
+                case ICON_TAG_SINGLE:
+                    Toast.makeText(getContext(), "start app", Toast.LENGTH_SHORT).show();
+                    break;
+                case  ICON_TAG_LIST:
+                    break;
+            }
+            return true;
+        }
+
+
+        @Override
+        public void onLongPress(@NonNull MotionEvent e) {
+            longPress = true;
+            requestDisallowInterceptTouchEvent(true);
+            if (curCellView != null) {
+                //震动 弹出菜单
+                popupMenu = new PopupMenu(getContext(), curCellView.touchingView);
+                popupMenu.getMenuInflater().inflate(R.menu.icon_menu, popupMenu.getMenu());
+                popupMenu.show();
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        // 控件每一个item的点击事件
+                        int itemId = item.getItemId();
+                        if (itemId == R.id.edit) {
+                            Toast.makeText(getContext(), "edit", Toast.LENGTH_SHORT).show();
+                        } else if (itemId == R.id.delete) {
+                            Toast.makeText(getContext(), "delete", Toast.LENGTH_SHORT).show();
+                        }
+                        return true;
+                    }
+                });
+            }
+        }
+
+        @Override
+        public boolean onScroll(MotionEvent e1, MotionEvent e2,
+                                float distanceX, float distanceY) {
+//            e1：表示手指 触摸屏幕时 的位置。
+//            e2：表示手指 滑动过程中 的位置。
+//            distanceX：表示手指在 水平方向上的滑动距离。
+//            distanceY：表示手指在 垂直方向上的滑动距离。
+            if (curCellView == null || !longPress) {
+                if (mOnNoSelectedViewScrollListener != null) {
+                    mOnNoSelectedViewScrollListener.onNoSelectedViewScroll(distanceX);
+                }
+            }
+//
+            switch (iconTag) {
+                case ICON_TAG_SINGLE:
+                    break;
+                case ICON_TAG_LIST:
+                    if (distanceX + distanceY >= ) {
+                        popupMenu.dismiss();
+                    }
+                    break;
+            }
+            return false;
+        }
+
+        //18898597241
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2,
+                               float velocityX, float velocityY) {
+            if (velocityY > velocityX &&
+                    velocityY >= minimumVelocity &&
+                    e1 != null && e2 != null &&
+                    e2.getY() - e1.getY() > 0) {
+                return true;
+            }
+            return false;
+
+        }
+    }
+
+
+    private TouchableView curCellView = null;
+    private boolean longPress = false;
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        if (!touchable) return true;
+        switch (ev.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                curCellView = getTouchingViewFromDownEvent(ev.getX(), ev.getY());
+                return true;
+        }
+
+        return true;
+    }
+
+
+    public TouchableView getTouchingViewFromDownEvent (float x, float y) {
+        HashSet<TouchableView> searched = new HashSet<>();
+        for (int i =0; i< pos2TouchableView.length; i++) {
+            for (int j = 0; j < pos2TouchableView[0].length; j ++) {
+                TouchableView touchableView = pos2TouchableView[i][j];
+                if (searched.contains(touchableView)) continue;
+                boolean yOk = Math.abs(touchableView.centerY - y) < touchableView.touchingView.getMeasuredHeight() / 2l ;
+                boolean xOk = Math.abs(touchableView.centerX - x) < touchableView.touchingView.getMeasuredWidth() / 2l;
+                if (xOk && yOk) curCellView = touchableView;
+                else searched.add(touchableView);
+            }
+        }
+        return curCellView;
+    }
+
+
+
+    private OnCellViewScrollListener  mOnCellViewScrollListener;
+    public void setOnCellViewScrollListener (OnCellViewScrollListener onCellViewScrollListener) {
+        this.mOnCellViewScrollListener = onCellViewScrollListener;
+    }
+    @Override
+    public void onCellViewScroll(int x) {}
+
+    private OnNoSelectedViewScrollListener mOnNoSelectedViewScrollListener;
+    public void setOnNoSelectedViewScrollListener (OnNoSelectedViewScrollListener onNoSelectedViewScrollListener) {
+        mOnNoSelectedViewScrollListener = onNoSelectedViewScrollListener;
+    }
+
+}
+
+class TouchableView {
+    public CellView touchingView;
+    public float centerX;
+    public float centerY;
+    public int touchingViewPosRow;
+    public int touchingViewPosCol;
+    public int pos;
+}
+
+interface OnCellViewScrollListener {
+    void onCellViewScroll (int y);
+}
+
+interface OnNoSelectedViewScrollListener {
+    void onNoSelectedViewScroll(float distanceX);
+}
+
+interface OnCellViewInsertedListener {
+    void onCellViewInserted (int row, int col);
+}
+class Point {
+    int x;
+    int y;
 }
