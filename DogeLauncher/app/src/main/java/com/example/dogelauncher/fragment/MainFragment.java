@@ -15,9 +15,14 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.dogelauncher.app.DogeApp;
 import com.example.dogelauncher.databinding.FragmentMainBinding;
+import com.example.dogelauncher.model.AppData;
 import com.example.dogelauncher.view.AppListView;
+import com.example.dogelauncher.view.CellView;
 import com.example.dogelauncher.view.MainView;
+import com.example.dogelauncher.view.MyViewPager;
 import com.example.dogelauncher.viewModel.AppListViewModel;
+
+import java.util.List;
 
 public class MainFragment extends Fragment {
 
@@ -52,21 +57,16 @@ public class MainFragment extends Fragment {
         mainBinding.setMainViewModel(appListViewModel);
 
         View view = mainBinding.getRoot();
-        Log.e(TAG, "onCreateView: appListView " + mainBinding.appListView );
+        Log.e(TAG, "onCreateView: app_view_pages " + mainBinding.appViewPages );
 
         if (appListViewModel.isDataPrepared()) {
             mainBinding.mainView.generateViews(appListViewModel.getData().subList(0, 6));
-            mainBinding.appListView.generateViews(appListViewModel);
+            generatePages();
             setObserver();
             appListViewModel.setMode(MODE_LISTING);
         } else {
             DogeApp.getGlobalHandler().postDelayed(loadData, 2000);
         }
-
-//        mainView.setVisibility(View.GONE);
-//        appListView.setVisibility(View.VISIBLE);
-
-
 
         return view;
     }
@@ -80,11 +80,11 @@ public class MainFragment extends Fragment {
                 switch (integer) {
                     case MODE_SURROUNDING:
                         mainBinding.mainView.setVisibility(View.VISIBLE);
-                        mainBinding.appListView.setVisibility(View.GONE);
+                        mainBinding.appViewPages.setVisibility(View.GONE);
                         break;
                     case MODE_LISTING:
                         mainBinding.mainView.setVisibility(View.GONE);
-                        mainBinding.appListView.setVisibility(View.VISIBLE);
+                        mainBinding.appViewPages.setVisibility(View.VISIBLE);
                         break;
                 }
             }
@@ -92,14 +92,13 @@ public class MainFragment extends Fragment {
     }
 
 
-
-
-    Runnable loadData = new Runnable() {
+    private Runnable loadData = new Runnable() {
         @Override
         public void run() {
             if (appListViewModel.isDataPrepared()) {
                 mainBinding.mainView.generateViews(appListViewModel.getData().subList(0, 6));
-                mainBinding.appListView.generateViews(appListViewModel);
+//                mainBinding.appListView.generateViews(appListViewModel);
+                generatePages();
                 setObserver();
                 appListViewModel.setMode(MODE_LISTING);
             } else {
@@ -108,5 +107,24 @@ public class MainFragment extends Fragment {
             }
         }
     };
+
+
+    private void generatePages () {
+        List<AppData> data = appListViewModel.getData();
+        int row = 4;
+        int col = 6;
+        int i = 0;
+        int curLast = Math.min(row * col, data.size());
+        while (true) {
+            for (;i < curLast; i += row * col) {
+                AppListView appList = new AppListView(getContext(), data.subList(i, curLast));
+                mainBinding.appViewPages.addView(appList);
+                appList.generateViews();
+                appList.setOnCellViewScrollListener(mainBinding.appViewPages);
+            }
+            if (curLast >= data.size()) break;
+            curLast = Math.min(curLast + row * col, data.size());
+        }
+    }
 
 }

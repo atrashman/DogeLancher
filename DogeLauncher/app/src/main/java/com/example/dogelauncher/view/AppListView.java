@@ -10,7 +10,7 @@ import com.example.dogelauncher.viewModel.AppListViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AppListView extends CellView implements OnNoSelectedViewScrollListener {
+public class AppListView extends CellView {
 
     //屏幕分成：7 * 4
     public static final int GRID_ROW_NUM = 6;
@@ -18,56 +18,32 @@ public class AppListView extends CellView implements OnNoSelectedViewScrollListe
 
     public static final int MARGIN_INVOKE_SCROLL = 10;
 
-    private AppListViewModel appListViewModel;
-    private boolean[][] pos;
 
     public AppListView(Context context) {
         super(context);
     }
 
-    public AppListView(Context context, AttributeSet attrs) {
-        super(context,attrs);
+    public AppListView(Context context, List<AppData> appDatas) {
+        super(context, appDatas);
         row = GRID_ROW_NUM;
         col = GRID_COLUMN_NUM;
-        init();
+        iconTag = ICON_TAG_LIST;
+        setOnCellViewScrollListener(getParent() instanceof MyViewPager ? (MyViewPager)getParent() : null);
     }
 
 
-
-    List<View> mCellViews;
-    public void generateViews (AppListViewModel appListViewModel) {
-        this.appListViewModel = appListViewModel;
-        mCellViews = new ArrayList<>(appListViewModel.getData().size());
-        List<AppData> data = appListViewModel.getData();
+    public void generateViews () {
         /**
          * 根据data的属性设置摆放位置或者组
          * */
-
-        for (int i = 0;i < data.size(); i ++) {
-            CellView cellView = new CellView(getContext(), data.get(i));
+        mCellViews = new ArrayList<>(appDatas.size());
+        for (int i = 0;i < appDatas.size(); i ++) {
+            CellView cellView = new CellView(getContext(), appDatas.get(i));
             mCellViews.add(cellView);
             addView(mCellViews.get(i));
-            cellView.setOnCellViewScrollListener(this);
-            setOnNoSelectedViewScrollListener(this);
         }
-        createPosInfo ();
+        setOnCellViewScrollListener(getParent() instanceof MyViewPager ? (MyViewPager)getParent() : null);
+        setOnNoSelectedViewScrollListener(getParent() instanceof MyViewPager ? (MyViewPager)getParent() : null);
         requestLayout();
-    }
-
-    @Override
-    public void onCellViewScroll(int x) {
-        MyViewPager parent = (MyViewPager)getParent();
-        int measuredWidth = getMeasuredWidth();
-        if (x + MARGIN_INVOKE_SCROLL > measuredWidth) {
-            parent.scrollToNextPager(true);
-        } else if (x - MARGIN_INVOKE_SCROLL < 0){
-            parent.scrollToNextPager(false);
-        }
-    }
-
-    @Override
-    public void onNoSelectedViewScroll(float distanceX) {
-        MyViewPager parent = (MyViewPager)getParent();
-        parent.scroll
     }
 }

@@ -1,15 +1,22 @@
 package com.example.dogelauncher.view;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.graphics.PointF;
 import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.Display;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.FrameLayout;
+import android.widget.Toast;
 
-public class MyViewPager extends ViewGroup {
+public class MyViewPager extends ViewGroup implements OnCellViewScrollListener, OnNoSelectedViewScrollListener{
 
     private static final String TAG = "MyViewPager";
     private static final boolean DEBUG = false;
@@ -22,10 +29,13 @@ public class MyViewPager extends ViewGroup {
 
     private MyScroller scroller;
 
+
     public MyViewPager(Context context, AttributeSet attrs) {
         super(context, attrs);
         initView(context);
     }
+
+
 
     private void initView(final Context context) {
         scroller = new MyScroller();
@@ -41,6 +51,8 @@ public class MyViewPager extends ViewGroup {
 
         });
 
+
+
     }
 
     /**
@@ -52,7 +64,7 @@ public class MyViewPager extends ViewGroup {
         //遍历孩子，给每个孩子指定在屏幕的坐标位置
         for (int i = 0; i < getChildCount(); i++) {
             View childView = getChildAt(i);
-            childView.layout(i * getWidth(), 0, (i + 1) * getWidth(), getHeight());
+            childView.layout(i * getMeasuredWidth(), 0, (i + 1) * getMeasuredWidth(), getMeasuredHeight());
         }
     }
 
@@ -127,10 +139,10 @@ public class MyViewPager extends ViewGroup {
                 if(DEBUG) Log.e(TAG, "onTouchEvent up: endX:" + endX);
                 //下标位置
                 int tempIndex = currentIndex;
-                if ((startX - endX) > getWidth() / 2) {
+                if ((startX - endX) > getWidth() / 3) {
                     //显示下一个页面
                     tempIndex++;
-                } else if ((endX - startX) > getWidth() / 2) {
+                } else if ((endX - startX) > getWidth() / 3) {
                     //显示上一个页面
                     tempIndex--;
                 }
@@ -168,7 +180,7 @@ public class MyViewPager extends ViewGroup {
          * */
 
         //剩余需要的偏移量
-        int distanceX = currentIndex * getWidth() - getScrollX();
+        int distanceX = currentIndex * getMeasuredWidth() - getScrollX();
         //移动到指定的位置
         //getScrollX  getScrollY都是 从视图的滚动开始（即用户开始滑动）到当前时刻的总偏移量，而不是上一次滑动结束后的距离。
         //第一次调用可能返回100，然后用户继续滑动，第二次调用可能返回200，依此类推
@@ -176,11 +188,11 @@ public class MyViewPager extends ViewGroup {
         scroller.startScroll(getScrollX(), getScrollY(), distanceX, 0);
 
         invalidate();
-        //会调computeScroll();
+        //会调 computeScroll();
     }
 
-    public void scrollToNextPager (boolean forward) {
-        Log.e(TAG, "scrollToNextPager: forward = "+ forward );
+    public void scrollToNextPage (boolean forward) {
+
     }
 
 
@@ -193,29 +205,56 @@ public class MyViewPager extends ViewGroup {
 
             scrollTo((int) currX, 0);
             invalidate();//又会回来调用computeScroll
+        } else {
+            scrollFinished = true;
         }
-        ;
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        int size = MeasureSpec.getSize(widthMeasureSpec);
-        int mode = MeasureSpec.getMode(widthMeasureSpec);
-        int sizeHeight = MeasureSpec.getSize(heightMeasureSpec);
-        int modeHeight = MeasureSpec.getMode(heightMeasureSpec);
-
-        int newsize = MeasureSpec.makeMeasureSpec(size, mode);
-
-        System.out.println("widthMeasureSpec==" + widthMeasureSpec + "size==" + size + ",mode==" + mode);
-        System.out.println("widthMeasureSpec==" + widthMeasureSpec + "sizeHeight==" + sizeHeight + ",modeHeight==" + modeHeight);
+//        int size = MeasureSpec.getSize(widthMeasureSpec);
+//        int mode = MeasureSpec.getMode(widthMeasureSpec);
+//        int sizeHeight = MeasureSpec.getSize(heightMeasureSpec);
+//        int modeHeight = MeasureSpec.getMode(heightMeasureSpec);
+//        System.out.println("widthMeasureSpec==" + widthMeasureSpec + "size==" + size + ",mode==" + mode);
+//        System.out.println("widthMeasureSpec==" + widthMeasureSpec + "sizeHeight==" + sizeHeight + ",modeHeight==" + modeHeight);
 
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
             child.measure(widthMeasureSpec, heightMeasureSpec);
         }
 
+    }
+
+    @Override
+    public void onCellViewScroll(float x, float y) {
+//        Toast.makeText(getContext(), "onCellViewScroll", Toast.LENGTH_SHORT).show();
+    }
+
+    private long startScrollTime;
+    @Override
+    public CellView onCellViewScrollToEdge(boolean forward) {
+        Toast.makeText(getContext(), "onCellViewScrollToEdge", Toast.LENGTH_SHORT).show();
+        startScrollTime = SystemClock.uptimeMillis();
+        scrollFinished = false;
+        int addNum = forward ? 1 : -1;
+        if (forward) scrollToPager(currentIndex + addNum) ;
+        else scrollToPager(currentIndex - addNum);
+
+        return (CellView)getChildAt(currentIndex);
+    }
+
+    boolean scrollFinished = true;
+    @Override
+    public boolean isScrollToEdgOpFinished() {
+        return SystemClock.uptimeMillis() - startScrollTime > 1000;
+    }
+
+    @Override
+    public void onNoSelectedViewScroll(float distanceX) {
+        Log.e(TAG, "onNoSelectedViewScroll: " );
     }
 }
 
@@ -248,7 +287,7 @@ class MyScroller {
     /**
      * 总时间
      */
-    private long totalTime = 500;
+    private long totalTime = 300;
     /**
      * 是否移动完成
      * false没有移动完成

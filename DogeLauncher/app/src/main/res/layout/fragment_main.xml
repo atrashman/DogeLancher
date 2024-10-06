@@ -17,13 +17,19 @@ xmlns:android="http://schemas.android.com/apk/res/android">
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 <!--    @{mainViewModel.surroundingMode ? mainViewModel.VISIBLE : mainViewModel.GONE}-->
-    <com.example.dogelauncher.view.AppListView
-        android:id="@+id/app_list_view"
-        android:layout_marginTop="50dp"
+
+    <com.example.dogelauncher.view.MyViewPager
+        android:id="@+id/app_view_pages"
         android:visibility="gone"
-        android:layout_gravity="center_horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
+<!--    <com.example.dogelauncher.view.AppListView-->
+<!--        android:id="@+id/app_list_view"-->
+<!--        android:layout_marginTop="50dp"-->
+<!--        android:visibility="gone"-->
+<!--        android:layout_gravity="center_horizontal"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"/>-->
 <!--    "@{mainViewModel.listingMode ? mainViewModel.VISIBLE : mainViewModel.GONE}"-->
 </FrameLayout>
 
